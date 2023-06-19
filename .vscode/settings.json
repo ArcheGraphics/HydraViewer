@@ -1,0 +1,334 @@
+{
+    //
+    // [[Terminal]]
+    //
+    "terminal.integrated.defaultProfile.osx": "zsh", // MacOS: 集成终端默认为 zsh
+    "terminal.integrated.macOptionIsMeta": true, // MacOS: 将 Option 键视为终端上的元键
+    "terminal.integrated.tabs.showActions": "always", // 始终显示“新建终端”按钮旁的“终端拆分”和“终止”按钮
+    "terminal.integrated.tabs.showActiveTerminal": "always", // 始终显示活动终端
+    "terminal.integrated.enableBell": true, // 集成终端启用视觉化铃声
+    "terminal.integrated.gpuAcceleration": "on", // 集成终端使用GPU加速
+    "terminal.integrated.rightClickBehavior": "selectWord", // 集成终端右击时选择光标下方的字词，并打开上下文菜单
+    "terminal.integrated.defaultProfile.windows": "PowerShell",
+    "terminal.integrated.env.windows": {
+        "LC_ALL": "zh_CN.UTF-8" // 集成终端编码: zh_CN.UTF-8
+    },
+    "terminal.integrated.profiles.windows": {
+        "PowerShell": {
+            "source": "PowerShell",
+            "icon": "terminal-powershell"
+        },
+        "Command Prompt": {
+            "path": [
+                "${env:windir}\\Sysnative\\cmd.exe",
+                "${env:windir}\\System32\\cmd.exe"
+            ],
+            "args": [],
+            "icon": "terminal-cmd"
+        },
+        "Git Bash": {
+            "source": "Git Bash"
+        },
+        "Windows PowerShell": {
+            "path": "C:\\Windows\\System32\\WindowsPowerShell\\v1.0\\powershell.exe"
+        }
+    },
+    //
+    // [[Git]]
+    //
+    "git.autofetch": true, // 自动从当前 Git 存储库的默认远程库提取提交
+    "git.confirmSync": false, // 同步 Git 存储库前确认
+    "git.enableSmartCommit": true, // 没有暂存的更改时，直接提交全部更改
+    "git.mergeEditor": true, // 启用三向合并编辑器
+    "gitlens.defaultDateLocale": null,
+    "gitlens.defaultDateFormat": null,
+    "gitlens.defaultDateShortFormat": null,
+    //
+    // [[Vim]]
+    //
+    "vim.easymotion": true,
+    "vim.incsearch": true,
+    "vim.useSystemClipboard": true,
+    "vim.useCtrlKeys": true,
+    "vim.hlsearch": true,
+    "vim.insertModeKeyBindings": [
+        {
+            "before": [
+                "j",
+                "j"
+            ],
+            "after": [
+                "<Esc>"
+            ]
+        }
+    ],
+    "vim.normalModeKeyBindingsNonRecursive": [
+        {
+            "before": [
+                "<leader>",
+                "d"
+            ],
+            "after": [
+                "d",
+                "d"
+            ]
+        },
+        {
+            "before": [
+                "<C-n>"
+            ],
+            "commands": [
+                ":nohl"
+            ]
+        },
+        {
+            "before": [
+                "K"
+            ],
+            "commands": [
+                "lineBreakInsert"
+            ],
+            "silent": true
+        }
+    ],
+    "vim.leader": "<space>",
+    "vim.handleKeys": {
+        "<C-a>": false,
+        "<C-f>": false
+    },
+    //
+    // [[Appearance]]
+    //
+    "terminal.integrated.fontSize": 14, // 集成终端字号
+    "explorer.compactFolders": false, // 资源管理器不采用紧凑模式
+    "editor.fontFamily": "JetBrains Mono Medium, LXGW Bright Medium", // 编辑器全局字体
+    "editor.fontLigatures": true, // 启用连字体
+    "editor.fontSize": 14, // 字号
+    // "editor.fontWeight": "450", // 字体粗细
+    "editor.lineHeight": 0, // 行高：使用 0 根据字号自动计算行高
+    "editor.bracketPairColorization.enabled": true, // 控制是否对括号着色
+    "editor.bracketPairColorization.independentColorPoolPerBracketType": false, // 各类括号着色等级不独立
+    "editor.guides.bracketPairs": true, // 启用括号指导线
+    "editor.guides.bracketPairsHorizontal": "active", // 启用水平括号指导线
+    "editor.guides.highlightActiveIndentation": false, // 禁用高亮选中的缩进指导线
+    "editor.guides.indentation": false, // 禁用缩进指导线
+    "editor.semanticHighlighting.enabled": true, // 启用语义高亮
+    // 自定义语法高亮示例
+    "editor.semanticTokenColorCustomizations": {
+        "[One Dark Pro]": {
+            "rules": {
+                // "selfKeyword": {
+                // "foreground": "#DD94E5",
+                // "fontStyle": "italic"
+                // }
+            }
+        }
+    },
+    "workbench.colorTheme": "Default Light Modern", // 颜色主题
+    "workbench.iconTheme": "vs-seti", // 图标主题
+    "workbench.startupEditor": "none", // 在没有从上一个会话恢复出信息的情况下，在启动时不打开编辑器
+    "workbench.view.alwaysShowHeaderActions": true, // 显示视图头部的操作项
+    // 括号颜色
+    "workbench.colorCustomizations": {
+        "[One Dark Pro]": {
+            "editorBracketHighlight.foreground3": "#9CDCFE",
+            "editorBracketHighlight.foreground4": "#F3FD00",
+            "editorBracketHighlight.foreground5": "#F47D9F",
+            "editorBracketHighlight.foreground6": "#A5ADFE"
+        }
+    },
+    // 针对输出窗口的部分设置
+    "[plaintext]": {
+        "editor.fontLigatures": false, // 不使用连字体
+        "editor.formatOnSave": false, // 不在保存时自动格式化
+        "editor.wordWrap": "on" // 启用自动换行
+    },
+    //
+    // [[Copilot]]
+    //
+    "github.copilot.enable": {
+        "*": true,
+        "yaml": false,
+        "plaintext": true,
+        "markdown": false,
+        "jsonc": false,
+        "cpp": false
+    },
+    //
+    // [[XMake]]
+    //
+    "xmake.runMode": "buildRun", // 运行前自动 build
+    // "xmake.additionalConfigArguments": "--cc=clang-cl --cxx=clang-cl", // windows 可以指定 clang-cl 作为编译器
+    // "xmake.debugConfigType": "codelldb", // 使用 codelldb 插件而非 cpptools 进行调试
+    "xmake.buildLevel": "verbose", // 设置编译时输出信息级别,默认是warnings级别,仅输出编译警告信息以及正常信息,verbose级别输出完整的编译命令行参数,debug级别对应 xmake -vD 的诊断信息，会打印出错的栈信息
+    "xmake.customDebugConfig": {
+        "console": "integratedTerminal" // XMake调试时使用集成终端而非 debug console,也可以使用 externalTerminal
+    },
+    "xmake.debuggingTargetsArguments": {
+        "default": [
+            // 啥也没有
+        ]
+    },
+    //
+    // [[C/C++]]
+    //
+    // cpptools
+    "C_Cpp.intelliSenseEngine": "Disabled", // 禁用微软 Cpptools 插件的提示功能
+    "C_Cpp.codeAnalysis.runAutomatically": false,
+    "C_Cpp.formatting": "Disabled",
+    // Clangd 运行参数(在终端/命令行输入 clangd --help-list-hidden 可查看更多)
+    "clangd.arguments": [
+        "--all-scopes-completion", // 全局补全(补全建议会给出在当前作用域不可见的索引,插入后自动补充作用域标识符),例如在main()中直接写cout,即使没有`#include <iostream>`,也会给出`std::cout`的建议,配合"--header-insertion=iwyu",还可自动插入缺失的头文件
+        "--background-index", // 后台分析并保存索引文件
+        "--clang-tidy", // 启用 Clang-Tidy 以提供「静态检查」，下面设置 clang tidy 规则
+        "--clang-tidy-checks=performance-*, bugprone-*, misc-*, google-*, modernize-*, readability-*, portability-*",
+        "--compile-commands-dir=${workspaceFolder}/.vscode", // 编译数据库(例如 compile_commands.json 文件)的目录位置
+        "--completion-parse=auto", // 当 clangd 准备就绪时，用它来分析建议
+        "--completion-style=detailed", // 建议风格：打包(重载函数只会给出一个建议);还可以设置为 detailed
+        // "--query-driver=/usr/bin/clang++", // MacOS 上需要设定 clang 编译器的路径，homebrew 安装的clang 是 /usr/local/opt/llvm/bin/clang++
+        // 启用配置文件(YAML格式)项目配置文件是在项目文件夹里的“.clangd”,用户配置文件是“clangd/config.yaml”,该文件来自:Windows: %USERPROFILE%\AppData\Local || MacOS: ~/Library/Preferences/ || Others: $XDG_CONFIG_HOME, usually ~/.config
+        "--enable-config",
+        "--fallback-style=Webkit", // 默认格式化风格: 在没找到 .clang-format 文件时采用,可用的有 LLVM, Google, Chromium, Mozilla, Webkit, Microsoft, GNU
+        "--function-arg-placeholders=true", // 补全函数时，将会给参数提供占位符，键入后按 Tab 可以切换到下一占位符，乃至函数末
+        "--header-insertion-decorators", // 输入建议中，已包含头文件的项与还未包含头文件的项会以圆点加以区分
+        "--header-insertion=iwyu", // 插入建议时自动引入头文件 iwyu
+        "--include-cleaner-stdlib", // 为标准库头文件启用清理功能(不成熟!!!)
+        "--log=verbose", // 让 Clangd 生成更详细的日志
+        "--pch-storage=memory", // pch 优化的位置(Memory 或 Disk,前者会增加内存开销，但会提升性能)
+        "--pretty", // 输出的 JSON 文件更美观
+        "--ranking-model=decision_forest", // 建议的排序方案：hueristics (启发式), decision_forest (决策树)
+        "-j=12" // 同时开启的任务数量
+    ],
+    // Clangd 找不到编译数据库(例如 compile_flags.json 文件)时采用的设置,缺陷是不能直接索引同一项目的不同文件,只能分析系统头文件、当前文件和include的文件
+    "clangd.fallbackFlags": [
+        "-pedantic",
+        "-Wall",
+        "-Wextra",
+        "-Wcast-align",
+        "-Wdouble-promotion",
+        "-Wformat=2",
+        "-Wimplicit-fallthrough",
+        "-Wmisleading-indentation",
+        "-Wnon-virtual-dtor",
+        "-Wnull-dereference",
+        "-Wold-style-cast",
+        "-Woverloaded-virtual",
+        "-Wpedantic",
+        "-Wshadow",
+        "-Wunused",
+        "-pthread",
+        "-fuse-ld=lld",
+        "-fsanitize=address",
+        "-fsanitize=undefined",
+        "-stdlib=libc++",
+        "-std=c++20"
+    ],
+    "clangd.checkUpdates": true, // 自动检测 clangd 更新
+    "clangd.onConfigChanged": "restart", // 重启 clangd 时重载配置,具体方法: F1 + Fn 打开命令面板，然后搜索“clangd: restart”
+    "clangd.serverCompletionRanking": true, // 借助网上的信息排序建议
+    "clangd.detectExtensionConflicts": true, // 当其它拓展与 clangd 冲突时警告并建议禁用
+    "editor.suggest.snippetsPreventQuickSuggestions": false, // clangd的snippets有很多的跳转点，不用这个就必须手动触发Intellisense了
+    //
+    // [[LLDB]]
+    //
+    "lldb.commandCompletions": true, // LLDB 指令自动补全
+    "lldb.dereferencePointers": true, // LLDB 指针显示解引用内容
+    "lldb.evaluateForHovers": true, // LLDB 鼠标悬停在变量上时预览变量值
+    "lldb.launch.expressions": "native", // LLDB 监视表达式的默认类型
+    "lldb.showDisassembly": "never", // LLDB 不显示汇编代码
+    "lldb.verboseLogging": true, // LLDB 生成更详细的日志
+    //
+    // [[General Settings]]
+    //
+    "breadcrumbs.filePath": "on", // 控制是否及如何在“导航路径”视图中显示文件路径
+    // debug
+    "debug.console.acceptSuggestionOnEnter": "on", // 调试控制台中可以用 enter 接受建议
+    "debug.internalConsoleOptions": "neverOpen", // 从不自动打开内部调试控制台
+    // editor
+    "editor.acceptSuggestionOnEnter": "on", // 编辑器中可以用 enter 接受建议
+    "editor.stickyScroll.enabled": true, // 启用粘滞滚动，即显示上一级对应的代码
+    "editor.wordBasedSuggestionsMode": "allDocuments", // 建议所有打开文档中的字词
+    "editor.unicodeHighlight.ambiguousCharacters": false, // 不突出显示可能与基本 ASCII 字符混淆的字符
+    "editor.inlayHints.enabled": "on", // 在编辑器中显示内联提示
+    "editor.minimap.enabled": true, // 控制是否显示缩略图cod
+    "editor.formatOnType": true, // 自动格式化
+    "editor.renderWhitespace": "none", // 控制编辑器在空白字符上显示符号的方式
+    "editor.snippetSuggestions": "top", // 代码片段建议置于其他建议之上
+    "editor.stickyTabStops": true, // 使用空格缩进时模拟制表符的行为，可以方便对齐
+    "editor.tabSize": 4, // 一个制表符 = 4个空格
+    "editor.suggest.insertMode": "replace", // 建议的接受方式
+    "editor.suggest.localityBonus": true, // 控制排序时是否提高靠近光标的词语的优先级
+    "editor.suggest.matchOnWordStartOnly": false, // 禁用建议必须匹配开头
+    "editor.suggest.shareSuggestSelections": true,
+    "editor.suggest.showStatusBar": true, // 控制建议小部件底部的状态栏可见
+    "editor.suggestOnTriggerCharacters": true, // 控制在键入触发字符后是否自动显示建议
+    "editor.suggestSelection": "first", // 始终预先选择第一个建议
+    "editor.wordBasedSuggestions": true, // 控制是否根据文档中的文字提供建议列表
+    "editor.autoClosingOvertype": "always", // 控制编辑器应当自动改写左引号或右引号
+    "editor.detectIndentation": false, // 禁用自动检测文件缩进模式和缩进大小，即打开文件后自动将文件更改为 VSCode 配置的缩进格式
+    "editor.formatOnSave": true, // 保存自动格式化代码
+    "editor.formatOnPaste": true, // 粘贴自动格式化
+    "editor.quickSuggestionsDelay": 0, // 控制显示快速建议前的等待时间（毫秒）
+    "editor.inlineSuggest.enabled": true, // 在编辑器中自动显示内联建议
+    "editor.parameterHints.enabled": true, // 是否在输入时显示含有参数文档和类型信息的小面板
+    // 控制是否在键入代码时自动显示建议
+    "editor.quickSuggestions": {
+        "comments": false, // 键入注释时不允许
+        "other": true, // 键入其他时允许
+        "strings": false // 键入字符串时不允许
+    },
+    // explorer
+    "explorer.confirmDragAndDrop": false, // 移动文件时无需确认
+    "explorer.confirmDelete": true, // 删除文件确认
+    "explorer.incrementalNaming": "smart", // 粘贴同名文件时的重命名方式;smart: 在重复名称末尾智能地添加/递增数字
+    // files
+    "files.autoSave": "afterDelay", // 自动保存
+    "files.hotExit": "onExitAndWindowClose", // 在会话间记住未保存的文件,允许在退出编辑器时跳过保存提示 onExitAndWindowClose: 退出或窗口关闭时
+    // 配置排除的文件和文件夹的glob模式,文件资源管理器将根据此设置决定要显示或隐藏的文件和文件夹
+    "files.exclude": {
+        "**/.classpath": true,
+        "**/.factorypath": true,
+        "**/.project": true,
+        "**/.settings": true
+    },
+    "files.associations": {
+        "*.pl": "prolog"
+    },
+    // notebook
+    "notebook.lineNumbers": "on", // 控制单元格编辑器中行号的显示
+    // 应该在何处显示单元格工具栏，或是否隐藏它
+    "notebook.cellToolbarLocation": {
+        "default": "right", // 默认: 右边
+        "jupyter-notebook": "left" // jupyter-notebook: 左边
+    },
+    // search
+    "search.showLineNumbers": true, // 显示搜索结果所在行号
+    "search.smartCase": true, // 当搜索词为小写时，则不区分大小写进行搜索，否则区分大小写
+    // 配置在搜索中排除的文件和文件夹的glob模式
+    "search.exclude": {
+        // "someFolder/": true,
+        // "somefile": true
+    },
+    // workbench
+    "workbench.settings.editor": "json", // 默认打开 settings.json 进行设置
+    "workbench.editor.historyBasedLanguageDetection": true, // 允许语言检测使用编辑器历史记录
+    // window
+    "window.restoreWindows": "all",
+    "window.titleBarStyle": "native",
+    "window.menuBarVisibility": "hidden",
+    // output
+    "output.smartScroll.enabled": true, // 输出窗口智能滚动：点击时锁定，点击最后一行时解锁
+    // problems
+    "problems.showCurrentInStatus": true, // 在状态栏显示当前问题
+    "problems.sortOrder": "position", // 控制问题导航的显示顺序
+    // other
+    "security.workspace.trust.untrustedFiles": "open",
+    "extensions.ignoreRecommendations": true,
+    "http.proxySupport": "on",
+    "[log]": {
+        "editor.fontSize": 16
+    },
+    "grunt.autoDetect": "on", // Grunt 任务自动检测
+    "gulp.autoDetect": "on",
+    "cmake.configureOnOpen": false // Gulp 任务自动检测
+}
