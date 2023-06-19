@@ -1,0 +1,6 @@
+[submodule "third_party/usd"]
+	path = third_party/usd
+	url = https://github.com/PixarAnimationStudios/USD.git
+[submodule "third_party/imgui"]
+	path = third_party/imgui
+	url = https://github.com/ocornut/imgui.git

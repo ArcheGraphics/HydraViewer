@@ -1,0 +1,41 @@
+[
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/src/gui/imgui_impl_glfw.cpp.o", "src/gui/imgui_impl_glfw.cpp"],
+  "file": "src/gui/imgui_impl_glfw.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/third_party/imgui/imgui_widgets.cpp.o", "third_party/imgui/imgui_widgets.cpp"],
+  "file": "third_party/imgui/imgui_widgets.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/third_party/imgui/imgui.cpp.o", "third_party/imgui/imgui.cpp"],
+  "file": "third_party/imgui/imgui.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/third_party/imgui/imgui_tables.cpp.o", "third_party/imgui/imgui_tables.cpp"],
+  "file": "third_party/imgui/imgui_tables.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/third_party/imgui/imgui_demo.cpp.o", "third_party/imgui/imgui_demo.cpp"],
+  "file": "third_party/imgui/imgui_demo.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/third_party/imgui/imgui_draw.cpp.o", "third_party/imgui/imgui_draw.cpp"],
+  "file": "third_party/imgui/imgui_draw.cpp"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-pipe", "-DIBOutlet=__attribute__((iboutlet))", "-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))", "-DIBAction=void)__attribute__((ibaction)", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-fobjc-arc", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/src/main.mm.o", "src/main.mm"],
+  "file": "src/main.mm"
+},
+{
+  "directory": "/Users/yangfeng/Desktop/HydraViewer",
+  "arguments": ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang", "-c", "-pipe", "-DIBOutlet=__attribute__((iboutlet))", "-DIBOutletCollection(ClassName)=__attribute__((iboutletcollection(ClassName)))", "-DIBAction=void)__attribute__((ibaction)", "-Qunused-arguments", "-target", "x86_64-apple-macos13.3", "-isysroot", "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX13.3.sdk", "-fobjc-arc", "-g", "-O0", "-std=c++14", "-Ithird_party/imgui", "-DGL_SILENCE_DEPRECATION", "-framework", "Cocoa", "-framework", "Metal", "-framework", "QuartzCore", "-framework", "Foundation", "-framework", "CoreFoundation", "-framework", "OpenGL", "-I", "/usr/local/Cellar/glfw/3.3.8/include", "-o", "build/.objs/hydraViewer/macosx/x86_64/debug/src/gui/imgui_impl_metal.mm.o", "src/gui/imgui_impl_metal.mm"],
+  "file": "src/gui/imgui_impl_metal.mm"
+}]
