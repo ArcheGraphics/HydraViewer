@@ -6,7 +6,6 @@
 
 #include "viewport.h"
 #include "camera.h"
-#include "common/metal_helpers.h"
 #include "common/logging.h"
 #include "common/filesystem.h"
 
@@ -367,12 +366,12 @@ void Viewport::requestFrame() {
 }
 
 Viewport::Viewport(uint64_t window_handle, uint width, uint height) {
-    _device = make_shared(MTL::CreateSystemDefaultDevice());
+    _device = MTL::CreateSystemDefaultDevice();
     _requestedFrames = 1;
     _startTimeInSeconds = 0;
     _sceneSetup = false;
 
-    _swapchain = std::make_unique<compute::metal::MetalSwapchain>(_device.get(), window_handle, width, height);
+    _swapchain = std::make_unique<Swapchain>(_device, window_handle, width, height);
 
     initializeMaterial();
 
@@ -393,7 +392,7 @@ Viewport::Viewport(uint64_t window_handle, uint width, uint height) {
 }
 
 Viewport::~Viewport() {
-    _device.reset();
+    _device->release();
     _engine.reset();
     _stage.Reset();
     _swapchain.reset();

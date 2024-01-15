@@ -21,19 +21,21 @@ endif ()
 find_package(Qt6 COMPONENTS
         Core Widgets
         REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+find_package(fmt CONFIG REQUIRED)
 
 add_subdirectory(third_party)
+add_subdirectory(common)
+add_subdirectory(viewport)
 
 set(CORE_FILES
         main.cpp
-        camera.cpp
-        viewport.mm
 )
 
 add_executable(HydraViewer ${CORE_FILES})
 target_link_libraries(HydraViewer
         Qt::Core
         Qt::Widgets
-        metal-cpp
+        viewport
 )
 
