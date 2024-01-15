@@ -13,11 +13,7 @@ list(APPEND CMAKE_MODULE_PATH
 # usd
 include(pxrConfig)
 include_directories(${PXR_INCLUDE_DIRS})
-set(PXR_LIBRARY_NAMES)
-foreach (_item ${PXR_LIBRARIES}) # Iterate over list of absolute paths
-    get_filename_component(_t ${_item} NAME)
-    list(APPEND PXR_LIBRARY_NAMES ${_t})
-endforeach ()
+
 if (APPLE)
     add_definitions(-DPXR_METAL_SUPPORT_ENABLED)
     add_compile_definitions(BOOST_NO_CXX98_FUNCTION_BASE)
@@ -32,18 +28,4 @@ find_package(fmt CONFIG REQUIRED)
 add_subdirectory(third_party)
 add_subdirectory(common)
 add_subdirectory(viewport)
-
-set(CORE_FILES
-        main.cpp
-)
-
-add_executable(HydraViewer ${CORE_FILES})
-target_link_libraries(HydraViewer
-        Qt::Core
-        Qt::Widgets
-        metal-cpp
-        common
-        viewport
-        ${PXR_LIBRARY_NAMES}
-)
-
+add_subdirectory(app)
