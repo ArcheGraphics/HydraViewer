@@ -16,6 +16,8 @@ set(COMMON_FILES
         camera.cpp
         viewport.h
         viewport.mm
+        framerate.h
+        framerate.cpp
 )
 
 source_group("common\\" FILES ${COMMON_FILES})

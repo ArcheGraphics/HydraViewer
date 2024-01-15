@@ -8,8 +8,13 @@
 #include <QPushButton>
 #include <QMainWindow>
 #include <QtGui/qevent.h>
+#include <fmt/format.h>
 #include "viewport/viewport.h"
 #include "viewport/camera.h"
+#include "viewport/framerate.h"
+
+static constexpr auto win_width = 1280u;
+static constexpr auto win_height = 720u;
 
 class Canvas : public QWidget {
 
@@ -19,7 +24,7 @@ public:
 public:
     explicit Canvas(QWidget *parent) noexcept
         : QWidget{parent},
-          viewport{winId(), (uint)width(), (uint)height()}{
+          viewport{winId(), win_width, win_height} {
         setAttribute(Qt::WA_NativeWindow);
         setAttribute(Qt::WA_PaintOnScreen);
         setAttribute(Qt::WA_OpaquePaintEvent);
@@ -32,7 +37,7 @@ public:
     }
 
     void wheelEvent(QWheelEvent *event) override {
-        auto delta = event->angleDelta();
+        auto delta = event->pixelDelta();
         viewport.viewCamera()->panByDelta({(float)delta.x(), (float)delta.y()});
     }
 
@@ -44,12 +49,9 @@ public:
 };
 
 int main(int argc, char *argv[]) {
-    static constexpr auto width = 1280u;
-    static constexpr auto height = 720u;
-
     QApplication app{argc, argv};
     QMainWindow window;
-    window.setFixedSize(width, height);
+    window.setFixedSize(win_width, win_height);
     window.setWindowTitle("Display");
     window.setAutoFillBackground(true);
 
@@ -57,21 +59,15 @@ int main(int argc, char *argv[]) {
     canvas.setFixedSize(window.contentsRect().size());
     canvas.move(window.contentsRect().topLeft());
 
-    QWidget overlay{&window};
-    overlay.setFixedSize(window.contentsRect().size() / 2);
-    overlay.move(window.contentsRect().center() - overlay.rect().center());
-    overlay.setAutoFillBackground(true);
-
-    QPushButton button{"Quit", &overlay};
-    button.move(overlay.contentsRect().center() - button.rect().center());
-    QObject::connect(&button, &QPushButton::clicked, [&] {
-        window.setVisible(false);
-    });
-
     window.show();
+    vox::Framerate framerate;
     while (window.isVisible()) {
         canvas.draw();
         QApplication::processEvents();
+
+        framerate.record();
+        auto title = fmt::format("Display - {:.2f} fps", framerate.report());
+        window.setWindowTitle(title.c_str());
     }
 
     QApplication::quit();
