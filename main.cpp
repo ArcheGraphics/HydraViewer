@@ -7,7 +7,9 @@
 #include <QApplication>
 #include <QPushButton>
 #include <QMainWindow>
+#include <QtGui/qevent.h>
 #include "viewport/viewport.h"
+#include "viewport/camera.h"
 
 class Canvas : public QWidget {
 
@@ -15,14 +17,30 @@ public:
     [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
 public:
-    explicit Canvas(QWidget *parent) noexcept : QWidget{parent} {
+    explicit Canvas(QWidget *parent) noexcept
+        : QWidget{parent},
+          viewport{winId(), (uint)width(), (uint)height()}{
         setAttribute(Qt::WA_NativeWindow);
         setAttribute(Qt::WA_PaintOnScreen);
         setAttribute(Qt::WA_OpaquePaintEvent);
         setAttribute(Qt::WA_NoSystemBackground);
         setAttribute(Qt::WA_DontCreateNativeAncestors);
         setAutoFillBackground(true);
+
+        auto stage = pxr::UsdStage::Open("assets/Kitchen_set/Kitchen_set.usd");
+        viewport.setupScene(stage);
     }
+
+    void wheelEvent(QWheelEvent *event) override {
+        auto delta = event->angleDelta();
+        viewport.viewCamera()->panByDelta({(float)delta.x(), (float)delta.y()});
+    }
+
+    void draw() {
+        viewport.draw();
+    }
+
+    vox::Viewport viewport;
 };
 
 int main(int argc, char *argv[]) {
@@ -50,17 +68,11 @@ int main(int argc, char *argv[]) {
         window.setVisible(false);
     });
 
-    NS::AutoreleasePool *pPool = NS::AutoreleasePool::alloc()->init();
-    auto stage = pxr::UsdStage::Open("assets/Kitchen_set/Kitchen_set.usd");
-    vox::Viewport viewport{canvas.winId(), width, height};
-    viewport.setupScene(stage);
-
     window.show();
     while (window.isVisible()) {
+        canvas.draw();
         QApplication::processEvents();
-        viewport.draw();
     }
 
     QApplication::quit();
-    pPool->release();
 }
