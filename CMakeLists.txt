@@ -22,9 +22,18 @@ find_package(Qt6 COMPONENTS
         Core Widgets
         REQUIRED)
 
-add_executable(HydraViewer main.cpp)
+add_subdirectory(third_party)
+
+set(CORE_FILES
+        main.cpp
+        camera.cpp
+        viewport.mm
+)
+
+add_executable(HydraViewer ${CORE_FILES})
 target_link_libraries(HydraViewer
         Qt::Core
         Qt::Widgets
+        metal-cpp
 )
 
