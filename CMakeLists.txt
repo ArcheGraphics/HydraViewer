@@ -6,6 +6,17 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
+# Add path for local cmake scripts
+list(APPEND CMAKE_MODULE_PATH
+        ${CMAKE_CURRENT_SOURCE_DIR}/../USDInstall)
+
+# usd
+include(pxrConfig)
+include_directories(${PXR_INCLUDE_DIRS})
+if (APPLE)
+    add_definitions(-DPXR_METAL_SUPPORT_ENABLED)
+    add_compile_definitions(BOOST_NO_CXX98_FUNCTION_BASE)
+endif ()
 
 find_package(Qt6 COMPONENTS
         Core Widgets

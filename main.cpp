@@ -7,6 +7,7 @@
 #include <QApplication>
 #include <QPushButton>
 #include <QMainWindow>
+#include <pxr/usd/usdGeom/gprim.h>
 
 class Canvas : public QWidget {
 
