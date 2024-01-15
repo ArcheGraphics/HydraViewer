@@ -7,7 +7,7 @@
 #include <QApplication>
 #include <QPushButton>
 #include <QMainWindow>
-#include <pxr/usd/usdGeom/gprim.h>
+#include "viewport/viewport.h"
 
 class Canvas : public QWidget {
 
@@ -50,10 +50,17 @@ int main(int argc, char *argv[]) {
         window.setVisible(false);
     });
 
+    NS::AutoreleasePool *pPool = NS::AutoreleasePool::alloc()->init();
+    auto stage = pxr::UsdStage::Open("assets/Kitchen_set/Kitchen_set.usd");
+    vox::Viewport viewport{canvas.winId(), width, height};
+    viewport.setupScene(stage);
+
     window.show();
     while (window.isVisible()) {
         QApplication::processEvents();
+        viewport.draw();
     }
 
     QApplication::quit();
+    pPool->release();
 }

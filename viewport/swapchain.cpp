@@ -4,8 +4,6 @@
 //  personal capacity and am not conveying any rights to any intellectual
 //  property of any third parties.
 
-#define CA_PRIVATE_IMPLEMENTATION
-
 #include "swapchain.h"
 #include "common/logging.h"
 #include "common/filesystem.h"
