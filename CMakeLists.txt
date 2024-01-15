@@ -8,11 +8,12 @@ set(CMAKE_AUTOUIC ON)
 
 
 find_package(Qt6 COMPONENTS
-        Core
+        Core Widgets
         REQUIRED)
 
 add_executable(HydraViewer main.cpp)
 target_link_libraries(HydraViewer
         Qt::Core
+        Qt::Widgets
 )
 
