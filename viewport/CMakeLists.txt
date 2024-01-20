@@ -1,4 +1,4 @@
-#  Copyright (c) 2023 Feng Yang
+#  Copyright (c) 2024 Feng Yang
 #
 #  I am making my contributions/submissions to this project solely in my
 #  personal capacity and am not conveying any rights to any intellectual
@@ -18,6 +18,12 @@ set(COMMON_FILES
         viewport.mm
         framerate.h
         framerate.cpp
+        root_data_model.h
+        root_data_model.cpp
+        free_camera.h
+        free_camera.cpp
+        common.h
+        common.cpp
 )
 
 source_group("common\\" FILES ${COMMON_FILES})
@@ -33,6 +39,8 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} .
 
 # Link third party libraries
 target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt::Core
+        Qt::Widgets
         fmt::fmt
         spdlog::spdlog
         metal-cpp
