@@ -9,15 +9,96 @@
 #include <QActionGroup>
 #include <fmt/format.h>
 #include <pxr/usd/usd/prim.h>
+#include <QStatusBar>
+#include <QDockWidget>
 
 namespace vox {
 Windows::Windows(int width, int height)
     : QMainWindow() {
-    setFixedSize(width, height);
+    //    setFixedSize(width, height);
     setWindowTitle("Editor");
     setAutoFillBackground(true);
 
+    initUI();
     initMenuBar();
+}
+
+void Windows::initUI() {
+    resize(1600, 900);
+    setObjectName("MainWindow");
+    l_status = new QLabel();
+    l_status->setStyleSheet("border: 0px;");
+    statusBar()->setHidden(false);
+    statusBar()->addWidget(l_status);
+
+    setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+    setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+    setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
+
+    setDockNestingEnabled(true);
+
+    // Stage Tree
+    {
+        // stage_tree_widget = get_stage_tree_widget();
+        stage_tree_dock_widget = new QDockWidget();
+        stage_tree_dock_widget->setWindowTitle("Scenegraph");
+        // stage_tree_dock_widget->setWidget(stage_tree_widget);
+        stage_tree_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+        addDockWidget(Qt::TopDockWidgetArea, stage_tree_dock_widget);
+    }
+
+    if (viewer_enabled) {
+        // data_model = StageView.DefaultDataModel();
+        // stage_view = StageView(dataModel = data_model);
+
+        // region Render Settings
+        // render_settings_widget = get_render_settings_widget(stage_view);
+        auto render_settings_dock_widget = new QDockWidget();
+        render_settings_dock_widget->setWindowTitle("Render Settings");
+        // render_settings_dock_widget->setWidget(render_settings_widget);
+        render_settings_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+        splitDockWidget(stage_tree_dock_widget, render_settings_dock_widget, Qt::Vertical);
+
+        // region Stage View
+        // stage_view_widget = get_stage_view_widget(data_model, stage_view);
+        // stage_view_widget.fileDropped.connect(on_view_file_dropped);
+        auto stage_view_dock_widget = new QDockWidget();
+        stage_view_dock_widget->setWindowTitle("Viewport");
+        // stage_view_dock_widget->setWidget(stage_view_widget);
+        stage_view_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+        addDockWidget(Qt::TopDockWidgetArea, stage_view_dock_widget);
+
+        // stage_view_widget.rendererChanged.connect(render_settings_widget.on_renderer_changed);
+    }
+
+    // region Properties
+    {
+        // properties = new PropertiesBinWidget(root_node_graph = qx_node_graph);
+        auto properties_dock_widget = new QDockWidget();
+        properties_dock_widget->setWindowTitle("Properties");
+        // properties_dock_widget->setWidget(properties);
+        properties_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+        addDockWidget(Qt::RightDockWidgetArea, properties_dock_widget);
+    }
+
+    // region events
+    {
+        // qx_node_graph.node_graph_changed.connect(on_node_graph_changed);
+        // qx_node_graph.mx_data_updated.connect(stage_ctrl.refresh_mx_file);
+
+        // qx_node_graph.mx_parameter_changed.connect(stage_ctrl.update_parameter);
+        // qx_node_graph.mx_file_loaded.connect(on_mx_file_loaded);
+
+        if (viewer_enabled) {
+            // stage_ctrl.signal_stage_changed.connect(stage_view_widget.set_stage);
+            // stage_ctrl.signal_stage_updated.connect(stage_view_widget.view.updateGL);
+        }
+        // stage_ctrl.signal_stage_changed.connect(stage_tree_widget.set_stage);
+        // stage_ctrl.signal_stage_updated.connect(stage_tree_widget.refresh_tree);
+    }
+
+    // setCentralWidget(qx_node_graph_widget);
+    // qx_node_graph_widget.setFocus();
 }
 
 void Windows::initMenuBar() {

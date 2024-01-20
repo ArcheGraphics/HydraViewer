@@ -7,6 +7,7 @@
 #pragma once
 
 #include <QMainWindow>
+#include <QLabel>
 
 namespace vox {
 class Windows : public QMainWindow {
@@ -15,7 +16,10 @@ public:
 
 private:
     bool viewer_enabled{true};
+    QDockWidget* stage_tree_dock_widget{};
+    QLabel* l_status{};
 
+    void initUI();
     void initMenuBar();
 };
 }// namespace vox

@@ -53,14 +53,14 @@ int main(int argc, char *argv[]) {
     QApplication app{argc, argv};
     vox::Windows window(win_width, win_height);
 
-    Canvas canvas{&window};
-    canvas.setFixedSize(window.contentsRect().size());
-    canvas.move(window.contentsRect().topLeft());
+//    Canvas canvas{&window};
+//    canvas.setFixedSize(window.contentsRect().size());
+//    canvas.move(window.contentsRect().topLeft());
 
     window.show();
     vox::Framerate framerate;
     while (window.isVisible()) {
-        canvas.draw();
+//        canvas.draw();
         QApplication::processEvents();
 
         framerate.record();
