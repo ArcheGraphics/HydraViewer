@@ -6,12 +6,13 @@
 
 #include <QApplication>
 #include <QPushButton>
-#include <QMainWindow>
 #include <QtGui/qevent.h>
 #include <fmt/format.h>
 #include "viewport/viewport.h"
 #include "viewport/camera.h"
 #include "viewport/framerate.h"
+
+#include "windows.h"
 
 static constexpr auto win_width = 1280u;
 static constexpr auto win_height = 720u;
@@ -50,10 +51,7 @@ public:
 
 int main(int argc, char *argv[]) {
     QApplication app{argc, argv};
-    QMainWindow window;
-    window.setFixedSize(win_width, win_height);
-    window.setWindowTitle("Display");
-    window.setAutoFillBackground(true);
+    vox::Windows window(win_width, win_height);
 
     Canvas canvas{&window};
     canvas.setFixedSize(window.contentsRect().size());

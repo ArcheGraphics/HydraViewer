@@ -5,10 +5,12 @@
 #  property of any third parties.
 
 cmake_minimum_required(VERSION 3.10)
-project(app)
+project(HydraViewer)
 
 add_executable(${PROJECT_NAME}
         main.cpp
+        windows.cpp
+        windows.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ../)
@@ -22,6 +24,7 @@ endforeach ()
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
         Qt::Widgets
+        fmt::fmt
         metal-cpp
         common
         viewport
