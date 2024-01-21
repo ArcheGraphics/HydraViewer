@@ -101,14 +101,6 @@ void StageView::setHUDStatKeys(const std::vector<int> &keys) {
     _hudStatKeys = keys;
 }
 
-void *StageView::camerasWithGuides() {
-    return _camerasWithGuides;
-}
-
-void StageView::setCamerasWithGuides(void *value) {
-    _camerasWithGuides = value;
-}
-
 std::optional<pxr::GfCamera> StageView::gfCamera() {
     return _lastComputedGfCamera;
 }
@@ -296,8 +288,6 @@ bool StageView::IsStopRendererSupported() {
 }
 
 void StageView::_stageReplaced() {
-    setCamerasWithGuides(nullptr);
-
     if (_dataModel.stage()) {
         _stageIsZup = (pxr::UsdGeomGetStageUpAxis(*_dataModel.stage()) == pxr::UsdGeomTokens->z);
         _dataModel.viewSettings().setFreeCamera(_createNewFreeCamera(_dataModel.viewSettings(), _stageIsZup));
@@ -734,7 +724,53 @@ void StageView::mouseReleaseEvent(QMouseEvent *event) {
     _dragActive = false;
 }
 
-void StageView::mouseMoveEvent(QMouseEvent *event) {}
+void StageView::mouseMoveEvent(QMouseEvent *event) {
+    auto x = event->x() * devicePixelRatioF();
+    auto y = event->y() * devicePixelRatioF();
+
+    if (_dragActive) {
+        auto dx = x - _lastX;
+        auto dy = y - _lastY;
+        if (dx == 0 && dy == 0) {
+            return;
+        }
+
+        auto freeCam = _dataModel.viewSettings().freeCamera();
+        if (_cameraMode == CameraMode::Tumble) {
+            freeCam->Tumble(0.25f * dx, 0.25f * dy);
+        } else if (_cameraMode == CameraMode::Zoom) {
+            auto zoomDelta = -.002 * (dx + dy);
+            if (freeCam->orthographic()) {
+                // orthographic cameras zoom by scaling fov
+                // fov is the height of the view frustum in world units
+                freeCam->setFov(freeCam->fov() * (1 + zoomDelta));
+            } else {
+                // perspective cameras dolly forward or back
+                freeCam->AdjustDistance(1.0 + zoomDelta);
+            }
+        } else if (_cameraMode == CameraMode::Truck) {
+            auto height = float(size().height());
+            auto pixelsToWorld = freeCam->ComputePixelsToWorldFactor(height);
+
+            _dataModel.viewSettings().freeCamera()->Truck(
+                -dx * pixelsToWorld,
+                dy * pixelsToWorld);
+        }
+
+        _lastX = x;
+        _lastY = y;
+        updateGL();
+
+        emit signalMouseDrag();
+    } else if (_cameraMode == CameraMode::None) {
+        // Mouse tracking is only enabled when rolloverPicking is enabled,
+        // and this function only gets called elsewise when mouse-tracking
+        // is enabled
+        pickObject(event->position().x(), event->position().x(), Qt::MouseButton::NoButton, event->modifiers());
+    } else {
+        event->ignore();
+    }
+}
 
 void StageView::wheelEvent(QWheelEvent *event) {
     switchToFreeCamera();
@@ -846,15 +882,104 @@ std::pair<bool, pxr::GfFrustum> StageView::computePickFrustum(qreal x, qreal y) 
     return {inImageBounds, cameraFrustum.ComputeNarrowedFrustum(point, size)};
 }
 
-void StageView::pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers modifiers) {}
+void StageView::pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers modifiers) {
+    if (!_dataModel.stage()) {
+        return;
+    }
+    auto renderer = _getRenderer();
+    if (!renderer) {
+        // error has already been issued
+        return;
+    }
 
-void StageView::glDraw() {}
+    auto [inImageBounds, pickFrustum] = computePickFrustum(x, y);
 
-void StageView::SetForceRefresh() {}
+    pxr::GfVec3d outHitPoint{};
+    pxr::GfVec3d outHitNormal{};
+    pxr::SdfPath outHitPrimPath;
+    pxr::SdfPath outHitInstancerPath;
+    int outHitInstanceIndex;
+    pxr::HdInstancerContext outInstancerContext;
+    if (inImageBounds) {
+        auto result = pick(pickFrustum);
+        outHitPoint = result->outHitPoint;
+        outHitNormal = result->outHitNormal;
+        outHitPrimPath = result->outHitPrimPath;
+        outHitInstancerPath = result->outHitInstancerPath;
+        outHitInstanceIndex = result->outHitInstanceIndex;
+        outInstancerContext = result->outInstancerContext;
+    } else {
+        // If we're picking outside the image viewport (maybe because
+        // camera guides are on), treat that as a de-select.
+        outHitPoint = {-1.0, -1.0, -1.0};
+        outHitPrimPath = pxr::SdfPath::EmptyPath();
+        outHitInstancerPath = pxr::SdfPath::EmptyPath();
+        outHitInstanceIndex = -1;
+    }
+    // Correct for high DPI displays
+    // Cast to int explicitly as some versions of PySide/Shiboken throw
+    // when converting extremely small doubles held in selectedPoint
+    auto coord = _scaleMouseCoords(QPoint(int(outHitPoint[0]), int(outHitPoint[1])));
+    outHitPoint[0] = coord.x();
+    outHitPoint[1] = coord.y();
 
-void StageView::ExportFreeCameraToStage() {}
+    if (button) {
+        emit signalPrimSelected(outHitPrimPath, outHitInstanceIndex, outHitInstancerPath, outInstancerContext, outHitPoint, button, modifiers);
+    } else {
+        emit signalPrimRollover(outHitPrimPath, outHitInstanceIndex, outHitInstancerPath, outInstancerContext, outHitPoint, modifiers);
+    }
+}
 
-void StageView::ExportSession() {}
+void StageView::glDraw() {
+    // todo
+}
+
+void StageView::SetForceRefresh(bool value) {
+    _forceRefresh = value;
+}
+
+void StageView::ExportFreeCameraToStage(pxr::UsdStagePtr const &stage, const std::string &defcamName,
+                                        std::optional<int> w, std::optional<int> h) {
+    if (!_dataModel.viewSettings().freeCamera()) {
+        return;
+    }
+
+    auto imgWidth = w.value_or(width());
+    auto imgHeight = h.value_or(height());
+
+    auto defcam = pxr::UsdGeomCamera::Define(stage, pxr::SdfPath("/" + defcamName));
+
+    // Map free camera params to usd camera.We do * * not **want to burn
+    // auto - clipping near / far into our exported camera
+    auto gfCamera = _dataModel.viewSettings().freeCamera()->computeGfCamera(_bbox, false);
+
+    auto targetAspect = float(imgWidth) / std::max(1.f, float(imgHeight));
+    pxr::CameraUtilConformWindow(&gfCamera, pxr::CameraUtilMatchVertically, targetAspect);
+
+    auto when = stage->HasAuthoredTimeCodeRange() ? _dataModel.currentFrame() : pxr::UsdTimeCode::Default();
+    defcam.SetFromCamera(gfCamera, when);
+}
+
+void StageView::ExportSession(const std::string &stagePath, const std::string &defcamName,
+                              std::optional<int> w, std::optional<int> h) {
+    auto tmpStage = pxr::UsdStage::CreateNew(stagePath);
+    if (_dataModel.stage()) {
+        tmpStage->GetRootLayer()->TransferContent(_dataModel.stage().value()->GetSessionLayer());
+    }
+    if (!cameraPrim()) {
+        // Export the free camera if it's the currently-visible camera
+        ExportFreeCameraToStage(tmpStage, defcamName, w, h);
+    }
+    tmpStage->GetRootLayer()->Save();
+
+    // Reopen just the tmp layer, to sublayer in the pose cache without
+    // incurring Usd composition cost.
+    if (_dataModel.stage()) {
+        auto sdfLayer = pxr::SdfLayer::FindOrOpen(stagePath);
+        sdfLayer->GetSubLayerPaths().push_back(_dataModel.stage().value()->GetRootLayer()->GetRealPath());
+        sdfLayer->Save();
+    }
+}
 
 void StageView::_primSelectionChanged() {
     updateSelection();

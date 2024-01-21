@@ -65,12 +65,12 @@ class StageView : public QWidget {
 signals:
     void signalBboxUpdateTimeChanged(long long);
 
-    void signalPrimSelected(pxr::SdfPath, int, pxr::SdfPath, int, pxr::GfVec3f,
+    void signalPrimSelected(pxr::SdfPath, int, pxr::SdfPath, pxr::HdInstancerContext, pxr::GfVec3d,
                             Qt::MouseButton,
                             Qt::KeyboardModifiers);
 
-    void signalPrimRollover(pxr::SdfPath, int, pxr::SdfPath, int,
-                            pxr::GfVec3f, Qt::KeyboardModifiers);
+    void signalPrimRollover(pxr::SdfPath, int, pxr::SdfPath, pxr::HdInstancerContext,
+                            pxr::GfVec3d, Qt::KeyboardModifiers);
 
     void signalMouseDrag();
 
@@ -155,10 +155,6 @@ public:
     std::vector<int> &HUDStatKeys();
 
     void setHUDStatKeys(const std::vector<int> &keys);
-
-    void *camerasWithGuides();
-
-    void setCamerasWithGuides(void *value);
 
     /// Return the last computed Gf Camera
     std::optional<pxr::GfCamera> gfCamera();
@@ -313,19 +309,23 @@ public:
 
     void computeAndSetClosestDistance();
 
-    std::optional<PickResult> pick(const pxr::GfFrustum& pickFrustum);
+    std::optional<PickResult> pick(const pxr::GfFrustum &pickFrustum);
 
     std::pair<bool, pxr::GfFrustum> computePickFrustum(qreal x, qreal y);
 
-    void pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers  modifiers);
+    void pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers modifiers);
 
     void glDraw();
 
-    void SetForceRefresh();
+    void SetForceRefresh(bool value);
 
-    void ExportFreeCameraToStage();
+    void ExportFreeCameraToStage(pxr::UsdStagePtr const &stage, const std::string &defcamName = "usdviewCam",
+                                 std::optional<int> imgWidth = std::nullopt,
+                                 std::optional<int> imgHeight = std::nullopt);
 
-    void ExportSession();
+    void ExportSession(const std::string &stagePath, const std::string &defcamName = "usdviewCam",
+                       std::optional<int> w = std::nullopt,
+                       std::optional<int> h = std::nullopt);
 
     void _primSelectionChanged();
 
@@ -369,20 +369,10 @@ private:
     bool _forceRefresh{false};
     float _renderTime = 0;
 
-    void *_camerasWithGuides{};
-
     std::vector<int> _fpsHUDInfo;
     std::vector<int> _fpsHUDKeys;
     std::vector<int> _upperHUDInfo;
     std::vector<int> _hudStatKeys;
-
-    void *_glPrimitiveGeneratedQuery{};
-    void *_glTimeElapsedQuery{};
-
-    void *_axisVBO{};
-    void *_bboxVBO{};
-    void *_cameraGuidesVBO{};
-    int _vao = 0;
 
     std::string _rendererDisplayName;
     pxr::TfToken _rendererAovName;
