@@ -40,6 +40,8 @@ source_group("common\\" FILES ${COMMON_FILES})
 
 set(PROJECT_FILES
         ${COMMON_FILES}
+        stage_view.cpp
+        stage_view.h
 )
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
