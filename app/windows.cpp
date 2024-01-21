@@ -15,11 +15,11 @@
 namespace vox {
 Windows::Windows(int width, int height)
     : QMainWindow() {
-    //    setFixedSize(width, height);
+    setFixedSize(width, height);
     setWindowTitle("Editor");
     setAutoFillBackground(true);
 
-    initUI();
+    // initUI();
     initMenuBar();
 }
 

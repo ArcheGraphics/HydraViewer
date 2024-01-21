@@ -15,15 +15,18 @@
 #include <pxr/imaging/hgi/blitCmdsOps.h>
 #include <pxr/usdImaging/usdImagingGL/engine.h>
 #include <pxr/usd/usdGeom/bboxCache.h>
+#import <QWidget>
 
 #include "swapchain.h"
 
 namespace vox {
 class Camera;
-class Viewport {
+class Viewport : public QWidget {
 public:
-    Viewport(uint64_t window_handle, uint width, uint height);
-    ~Viewport();
+    explicit Viewport(QWidget *parent);
+    ~Viewport() override;
+
+    [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
     void draw();
 

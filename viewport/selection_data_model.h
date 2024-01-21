@@ -45,7 +45,7 @@ public:
 
     /// Get the full selection of paths and their corresponding selected
     ///  instances.
-    const std::map<pxr::SdfPath, std::set<int>>& getPrimPathInstances();
+    const std::map<pxr::SdfPath, std::set<int>> &getPrimPathInstances();
 
     /// Get the prims added to or removed from the selection since the last
     ///  time getDiff() was called.
@@ -162,7 +162,7 @@ public:
     /// Get a dictionary which maps each selected prim to a set of its
     //  selected instances. If all of a path's instances are selected, the value
     //  is ALL_INSTANCES rather than a set.
-    const std::map<pxr::SdfPath, std::set<int>>& getPrimPathInstances();
+    const std::map<pxr::SdfPath, std::set<int>> &getPrimPathInstances();
 
     /// Select only the given prim path. If only a single prim was selected
     //  before and all selected properties belong to this prim, select the

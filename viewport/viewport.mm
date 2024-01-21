@@ -365,13 +365,21 @@ void Viewport::requestFrame() {
     _requestedFrames++;
 }
 
-Viewport::Viewport(uint64_t window_handle, uint width, uint height) {
+Viewport::Viewport(QWidget *parent)
+    : QWidget{parent} {
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_PaintOnScreen);
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_DontCreateNativeAncestors);
+    setAutoFillBackground(true);
+
     _device = MTL::CreateSystemDefaultDevice();
     _requestedFrames = 1;
     _startTimeInSeconds = 0;
     _sceneSetup = false;
 
-    _swapchain = std::make_unique<Swapchain>(_device, window_handle, width, height);
+    _swapchain = std::make_unique<Swapchain>(_device, winId(), parent->width(), parent->height());
 
     initializeMaterial();
 
