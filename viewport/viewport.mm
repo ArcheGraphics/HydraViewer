@@ -33,6 +33,8 @@
 #include <string>
 #include <vector>
 
+#include <QResizeEvent>
+
 using namespace pxr;
 
 namespace vox {
@@ -166,9 +168,7 @@ void Viewport::initializeEngine() {
     _hgi = Hgi::CreatePlatformDefaultHgi();
     HdDriver driver{HgiTokens->renderDriver, VtValue(_hgi.get())};
 
-    _engine = std::make_shared<pxr::UsdImagingGLEngine>(_stage->GetPseudoRoot().GetPath(),
-                                                        excludedPaths, SdfPathVector(),
-                                                        SdfPath::AbsoluteRootPath(), driver);
+    _engine = std::make_shared<pxr::UsdImagingGLEngine>(driver);
 
     _engine->SetEnablePresentation(false);
     _engine->SetRendererAov(HdAovTokens->color);
@@ -365,6 +365,16 @@ void Viewport::requestFrame() {
     _requestedFrames++;
 }
 
+void Viewport::recreateSwapChain(QSize size) {
+    _swapchain = std::make_unique<Swapchain>(_device, winId(), size.width(), size.height());
+    requestFrame();
+}
+
+void Viewport::resizeEvent(QResizeEvent *event) {
+    resize(event->size());
+    recreateSwapChain(event->size());
+}
+
 Viewport::Viewport(QWidget *parent)
     : QWidget{parent} {
     setAttribute(Qt::WA_NativeWindow);
@@ -378,8 +388,6 @@ Viewport::Viewport(QWidget *parent)
     _requestedFrames = 1;
     _startTimeInSeconds = 0;
     _sceneSetup = false;
-
-    _swapchain = std::make_unique<Swapchain>(_device, winId(), parent->width(), parent->height());
 
     initializeMaterial();
 

@@ -8,16 +8,23 @@
 
 #include <QMainWindow>
 #include <QLabel>
+#include "viewport/viewport.h"
 
 namespace vox {
 class Windows : public QMainWindow {
 public:
     Windows(int width, int height);
 
+    void run();
+
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     bool viewer_enabled{true};
     QDockWidget* stage_tree_dock_widget{};
     QLabel* l_status{};
+
+    vox::Viewport viewport;
 
     void initUI();
     void initMenuBar();

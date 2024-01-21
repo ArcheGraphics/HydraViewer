@@ -40,6 +40,10 @@ public:
 
     Camera *viewCamera() { return _viewCamera.get(); }
 
+    void recreateSwapChain(QSize size);
+
+    void resizeEvent(QResizeEvent *event) override;
+
 private:
     /// Sets an initial material for the scene.
     void initializeMaterial();

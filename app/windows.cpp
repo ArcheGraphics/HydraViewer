@@ -5,22 +5,48 @@
 //  property of any third parties.
 
 #include "windows.h"
+#include "viewport/framerate.h"
 #include <QMenuBar>
 #include <QActionGroup>
 #include <fmt/format.h>
 #include <pxr/usd/usd/prim.h>
 #include <QStatusBar>
 #include <QDockWidget>
+#include <QApplication>
 
 namespace vox {
 Windows::Windows(int width, int height)
-    : QMainWindow() {
-    setFixedSize(width, height);
+    : QMainWindow(),
+      viewport{this} {
+    resize(width, height);
     setWindowTitle("Editor");
     setAutoFillBackground(true);
 
+    viewport.move(contentsRect().topLeft());
+    viewport.resize(contentsRect().size());
+    viewport.recreateSwapChain(contentsRect().size());
+    viewport.setupScene(pxr::UsdStage::Open("assets/Kitchen_set/Kitchen_set.usd"));
+
     // initUI();
     initMenuBar();
+}
+
+void Windows::resizeEvent(QResizeEvent *event) {
+    QMainWindow::resizeEvent(event);
+    viewport.resizeEvent(event);
+}
+
+void Windows::run() {
+    show();
+    vox::Framerate framerate;
+    while (isVisible()) {
+        viewport.draw();
+        QApplication::processEvents();
+
+        framerate.record();
+        auto title = fmt::format("Display - {:.2f} fps", framerate.report());
+        setWindowTitle(title.c_str());
+    }
 }
 
 void Windows::initUI() {
