@@ -81,6 +81,15 @@ signals:
     void signalFrustumChanged();
 
 public:
+    struct PickResult {
+        pxr::GfVec3d outHitPoint;
+        pxr::GfVec3d outHitNormal;
+        pxr::SdfPath outHitPrimPath;
+        pxr::SdfPath outHitInstancerPath;
+        int outHitInstanceIndex;
+        pxr::HdInstancerContext outInstancerContext;
+    };
+
     enum class CameraMode {
         None,
         Truck,
@@ -152,7 +161,7 @@ public:
     void setCamerasWithGuides(void *value);
 
     /// Return the last computed Gf Camera
-    pxr::GfCamera &gfCamera();
+    std::optional<pxr::GfCamera> gfCamera();
 
     /// Unlike the StageView.freeCamera property, which is invalid/None
     //  whenever we are viewing from a scene/stage camera, the 'cameraFrustum'
@@ -247,24 +256,39 @@ public:
     /// True if the camera has a defined aspect ratio that should not change when the viewport is resized.
     bool hasLockedAspectRatio();
 
-    void computeWindowPolicy();
+    pxr::CameraUtilConformWindowPolicy computeWindowPolicy(float cameraAspectRatio);
 
-    void computeWindowSize();
+    pxr::GfVec2i computeWindowSize();
 
-    void computeWindowViewport();
+    pxr::GfRange2d computeWindowViewport();
 
-    void resolveCamera();
+    /// Returns a tuple of the camera to use for rendering (either a scene
+    /// camera or a free camera) and that camera's original aspect ratio.
+    /// Depending on camera guide settings, the camera frustum may be conformed
+    /// to fit the window viewport. Emits a signalFrustumChanged if the
+    /// camera frustum has changed since the last time resolveCamera was called.
+    std::pair<pxr::GfCamera, float> resolveCamera();
 
-    void computeCameraViewport();
+    pxr::GfRange2d computeCameraViewport(float cameraAspectRatio);
 
+    /// Returns a copy of this StageView's view-affecting state,
+    //  which can be used later to restore the view via restoreViewState().
+    //  Take note that we do NOT include the StageView's notion of the
+    //  current time (used by prim-based cameras to extract their data),
+    //  since we do not want a restore operation to put us out of sync
+    //  with respect to our owner's time.
     void copyViewState();
 
+    /// Restore view parameters from 'viewState', and redraw
     void restoreViewState();
 
     void paintGL();
 
     void drawHUD();
 
+    /// Returns an image of the frame buffer. If cropToAspectRatio is True
+    /// and the camera mask is shown, the image is cropped to the camera's
+    /// aspect ratio.
     void grabFrameBuffer();
 
     QSize sizeHint();
@@ -279,17 +303,21 @@ public:
 
     void wheelEvent(QWheelEvent *event) override;
 
+    /// If we are currently rendering from a prim camera, switch to the
+    ///  FreeCamera.  Then reset the near/far clipping planes based on
+    ///  distance to closest geometry.  But only when autoClip has turned on!
     void _onAutoComputeClippingChanged();
 
+    /// Switch to the free camera if any of its settings have been modified.
     void _onFreeCameraSettingChanged();
 
     void computeAndSetClosestDistance();
 
-    void pick();
+    std::optional<PickResult> pick(const pxr::GfFrustum& pickFrustum);
 
-    void computePickFrustum();
+    std::pair<bool, pxr::GfFrustum> computePickFrustum(qreal x, qreal y);
 
-    void pickObject();
+    void pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers  modifiers);
 
     void glDraw();
 
@@ -305,7 +333,7 @@ private:
     DefaultDataModel _dataModel;
     bool _isFirstImage{true};
 
-    pxr::GfCamera _lastComputedGfCamera{};
+    std::optional<pxr::GfCamera> _lastComputedGfCamera{};
     float _lastAspectRatio = 1.0;
     Mask _mask;
     Outline _maskOutline;
@@ -315,8 +343,8 @@ private:
     CameraMode _cameraMode = CameraMode::None;
     bool _rolloverPicking = false;
     bool _dragActive = false;
-    int _lastX = 0;
-    int _lastY = 0;
+    qreal _lastX = 0;
+    qreal _lastY = 0;
 
     std::shared_ptr<pxr::UsdImagingGLEngine> _renderer{};
     bool _renderPauseState = false;

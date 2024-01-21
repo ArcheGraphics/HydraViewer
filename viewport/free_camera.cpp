@@ -99,7 +99,15 @@ void FreeCamera::resetClippingPlanes() {
 
 void FreeCamera::setClippingPlanes(pxr::GfBBox3d stageBBox) {}
 
-void FreeCamera::computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip) {}
+pxr::GfCamera FreeCamera::computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip) {
+    _pushToCameraTransform();
+    if (autoClip) {
+        setClippingPlanes(stageBBox);
+    } else {
+        resetClippingPlanes();
+    }
+    return _camera;
+}
 
 void FreeCamera::frameSelection(pxr::GfBBox3d selBBox, float frameFit) {}
 

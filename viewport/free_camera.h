@@ -20,15 +20,17 @@ signals:
 
     void signalFrustumSettingsChanged();
 public:
-    float defaultNear = 1;
-    float defaultFar = 2000000;
+    float _selSize{10};
+
+    static constexpr float defaultNear = 1;
+    static constexpr float defaultFar = 2000000;
     // Experimentally on Nvidia M6000, if Far/Near is greater than this,
     // then geometry in the back half of the volume will disappear
-    float maxSafeZResolution = 1e6;
+    static constexpr float maxSafeZResolution = 1e6;
     // Experimentally on Nvidia M6000, if Far/Near is greater than this,
     // then we will often see Z-fighting artifacts even for geometry that
     // is close to camera, when rendering for picking
-    float maxGoodZResolution = 5e4;
+    static constexpr float maxGoodZResolution = 5e4;
 
     explicit FreeCamera(bool isZup, float fov = 60, float aspectRatio = 1.0,
                         std::optional<float> overrideNear = std::nullopt,
@@ -52,7 +54,7 @@ public:
     //  returns the GfCamera object.  If 'autoClip' is True, then compute
     //  "optimal" positions for the near/far clipping planes based on the
     //  current closestVisibleDist, in order to maximize Z-buffer resolution
-    void computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip = false);
+    pxr::GfCamera computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip = false);
 
     /// needs to be recomputed
     void frameSelection(pxr::GfBBox3d selBBox, float frameFit);
@@ -158,7 +160,6 @@ private:
     float _rotPsi{0};
     pxr::GfVec3d _center{};
     float _dist{100};
-    float _selSize{10};
     pxr::GfMatrix4d _yzUpMatrix{};
     pxr::GfMatrix4d _yzUpInvMatrix{};
     std::optional<float> _closestVisibleDist;

@@ -9,13 +9,19 @@
 #include <pxr/base/gf/camera.h>
 #include <pxr/base/gf/frustum.h>
 #include <pxr/base/gf/range3d.h>
+#include <pxr/imaging/cameraUtil/conformWindow.h>
 #include <QtWidgets/QApplication>
+#include <QWheelEvent>
 #include <utility>
 #include <pxr/usd/usdGeom/metrics.h>
+#include <pxr/usd/usdGeom/camera.h>
 
 namespace vox {
 namespace {
 void _computeCameraFraming() {}
+pxr::GfRange2d viewportMakeCenteredIntegral(pxr::GfRange2d viewport) {
+    return {};
+}
 }// namespace
 
 StageView::StageView(QWidget *parent) noexcept
@@ -103,12 +109,12 @@ void StageView::setCamerasWithGuides(void *value) {
     _camerasWithGuides = value;
 }
 
-pxr::GfCamera &StageView::gfCamera() {
+std::optional<pxr::GfCamera> StageView::gfCamera() {
     return _lastComputedGfCamera;
 }
 
 pxr::GfFrustum StageView::cameraFrustum() {
-    return _lastComputedGfCamera.GetFrustum();
+    return _lastComputedGfCamera->GetFrustum();
 }
 
 const std::string &StageView::rendererDisplayName() {
@@ -556,51 +562,291 @@ bool StageView::hasLockedAspectRatio() {
     return getActiveSceneCamera() || _dataModel.viewSettings().lockFreeCameraAspect();
 }
 
-void StageView::computeWindowPolicy() {}
+pxr::CameraUtilConformWindowPolicy StageView::computeWindowPolicy(float cameraAspectRatio) {
+    auto windowPolicy = pxr::CameraUtilMatchVertically;
 
-void StageView::computeWindowSize() {}
+    if (hasLockedAspectRatio()) {
+        if (_cropImageToCameraViewport()) {
+            auto targetAspect = float(size().width()) / std::max(1.f, float(size().height()));
 
-void StageView::computeWindowViewport() {}
+            if (targetAspect < cameraAspectRatio) {
+                windowPolicy = pxr::CameraUtilMatchHorizontally;
+            }
+        } else {
+            if (_fitCameraInViewport()) {
+                windowPolicy = pxr::CameraUtilFit;
+            }
+        }
+    }
 
-void StageView::resolveCamera() {}
+    return windowPolicy;
+}
 
-void StageView::computeCameraViewport() {}
+pxr::GfVec2i StageView::computeWindowSize() {
+    auto size = this->size() * devicePixelRatioF();
+    return {int(size.width()), int(size.height())};
+}
 
-void StageView::copyViewState() {}
+pxr::GfRange2d StageView::computeWindowViewport() {
+    return {pxr::GfVec2i{0, 0}, computeWindowSize()};
+}
 
-void StageView::restoreViewState() {}
+std::pair<pxr::GfCamera, float> StageView::resolveCamera() {
+    // If 'camera' is None, make sure we have a valid freeCamera
+    auto sceneCam = getActiveSceneCamera();
+    pxr::GfCamera gfCam;
+    if (sceneCam) {
+        gfCam = pxr::UsdGeomCamera(sceneCam.value()).GetCamera(_dataModel.currentFrame());
+    } else {
+        switchToFreeCamera();
+        gfCam = _dataModel.viewSettings().freeCamera()->computeGfCamera(_bbox, autoClip());
 
-void StageView::paintGL() {}
+        if (hasLockedAspectRatio()) {
+            // Copy the camera before calling ConformWindow so we don't
+            // overwrite the camera's aspect ratio.
+            gfCam = pxr::GfCamera(gfCam);
+        }
+    }
+    auto cameraAspectRatio = gfCam.GetAspectRatio();
 
-void StageView::drawHUD() {}
+    // Conform the camera's frustum to the window viewport, if necessary.
+    if (!_cropImageToCameraViewport()) {
+        auto targetAspect = float(size().width()) / std::max(1.f, float(size().height()));
+        if (_fitCameraInViewport()) {
+            pxr::CameraUtilConformWindow(&gfCam, pxr::CameraUtilFit, targetAspect);
+        } else {
+            pxr::CameraUtilConformWindow(&gfCam, pxr::CameraUtilMatchVertically, targetAspect);
+        }
+    }
+    auto frustumChanged = ((!_lastComputedGfCamera) || _lastComputedGfCamera->GetFrustum() != gfCam.GetFrustum());
 
-void StageView::grabFrameBuffer() {}
+    // We need to COPY the camera, not assign it...
+    _lastComputedGfCamera = pxr::GfCamera(gfCam);
+    _lastAspectRatio = cameraAspectRatio;
+    if (frustumChanged) {
+        emit signalFrustumChanged();
+    }
+    return {gfCam, cameraAspectRatio};
+}
+
+pxr::GfRange2d StageView::computeCameraViewport(float cameraAspectRatio) {
+    auto windowPolicy = pxr::CameraUtilMatchVertically;
+    auto targetAspect = float(size().width()) / std::max(1.f, float(size().height()));
+    if (targetAspect < cameraAspectRatio) {
+        windowPolicy = pxr::CameraUtilMatchHorizontally;
+    }
+    auto viewport = pxr::GfRange2d(pxr::GfVec2d(0, 0),
+                                   pxr::GfVec2d(computeWindowSize()));
+    viewport = pxr::CameraUtilConformedWindow(viewport, windowPolicy, cameraAspectRatio);
+
+    viewport = pxr::GfRange2d(pxr::GfVec2d(viewport.GetMin()[0], viewport.GetMin()[1]),
+                              pxr::GfVec2d(viewport.GetSize()[0], viewport.GetSize()[1]));
+    viewport = viewportMakeCenteredIntegral(viewport);
+
+    return viewport;
+}
+
+void StageView::copyViewState() {
+    // todo
+}
+
+void StageView::restoreViewState() {
+    // todo
+}
+
+void StageView::paintGL() {
+    // todo
+}
+
+void StageView::drawHUD() {
+    // todo
+}
+
+void StageView::grabFrameBuffer() {
+    // todo
+}
 
 QSize StageView::sizeHint() {
     return {460, 460};
 }
 
-void StageView::switchToFreeCamera(bool computeAndSetClosestDistance) {}
+void StageView::switchToFreeCamera(bool computeAndSetClosestDistance) {
+    auto &viewSettings = _dataModel.viewSettings();
+    if (viewSettings.cameraPrim() != std::nullopt) {
+        std::shared_ptr<FreeCamera> freeCamera{};
+        // cameraPrim may no longer be valid,; so use the last-computed gf camera
+        if (_lastComputedGfCamera) {
+            freeCamera = std::make_shared<FreeCamera>(_lastComputedGfCamera.value(), _stageIsZup);
+        } else {
+            freeCamera = _createNewFreeCamera(viewSettings, _stageIsZup);
+        }
 
-void StageView::mousePressEvent(QMouseEvent *event) {}
+        if (viewSettings.lockFreeCameraAspect()) {
+            // Update free camera aspect ratio to match the current camera.
+            if (_lastAspectRatio < freeCamera->aspectRatio()) {
+                freeCamera->sethHorizontalAperture(_lastAspectRatio * freeCamera->verticalAperture());
+            } else {
+                freeCamera->setVerticalAperture(freeCamera->horizontalAperture() / _lastAspectRatio);
+            }
 
-void StageView::mouseReleaseEvent(QMouseEvent *event) {}
+            viewSettings.setCameraPrim(std::nullopt);
+            viewSettings.setFreeCamera(freeCamera);
+
+            if (computeAndSetClosestDistance) {
+                this->computeAndSetClosestDistance();
+            }
+            // let the controller know we've done this!
+            emit signalSwitchedToFreeCam();
+        }
+    }
+}
+
+void StageView::mousePressEvent(QMouseEvent *event) {
+    _dragActive = true;
+    auto x = event->position().x() * devicePixelRatioF();
+    auto y = event->position().y() * devicePixelRatioF();
+
+    if ((event->modifiers() & (Qt::AltModifier | Qt::MetaModifier))) {
+        if (event->button() == Qt::LeftButton) {
+            switchToFreeCamera();
+
+            auto ctrlModifier = event->modifiers() & Qt::ControlModifier;
+            _cameraMode = ctrlModifier ? CameraMode::Truck : CameraMode::Tumble;
+        }
+        if (event->button() == Qt::MiddleButton) {
+            switchToFreeCamera();
+            _cameraMode = CameraMode::Truck;
+        }
+        if (event->button() == Qt::RightButton) {
+            switchToFreeCamera();
+            _cameraMode = CameraMode::Zoom;
+        }
+    } else {
+        _cameraMode = CameraMode::Pick;
+        pickObject(x, y, event->button(), event->modifiers());
+    }
+    _lastX = x;
+    _lastY = y;
+}
+
+void StageView::mouseReleaseEvent(QMouseEvent *event) {
+    _cameraMode = CameraMode::None;
+    _dragActive = false;
+}
 
 void StageView::mouseMoveEvent(QMouseEvent *event) {}
 
-void StageView::wheelEvent(QWheelEvent *event) {}
+void StageView::wheelEvent(QWheelEvent *event) {
+    switchToFreeCamera();
+    _dataModel.viewSettings().freeCamera()->AdjustDistance(1.f - std::max(-0.5f, std::min(0.5f, (float(event->angleDelta().y()) / 1000.f))));
+    updateGL();
+}
 
-void StageView::_onAutoComputeClippingChanged() {}
+void StageView::_onAutoComputeClippingChanged() {
+    if (_dataModel.viewSettings().autoComputeClippingPlanes()) {
+        if (!_dataModel.viewSettings().freeCamera()) {
+            switchToFreeCamera();
+        } else {
+            computeAndSetClosestDistance();
+        }
+    }
+}
 
-void StageView::_onFreeCameraSettingChanged() {}
+void StageView::_onFreeCameraSettingChanged() {
+    switchToFreeCamera();
+    update();
+}
 
-void StageView::computeAndSetClosestDistance() {}
+void StageView::computeAndSetClosestDistance() {
+    if (!_dataModel.viewSettings().freeCamera()) {
+        return;
+    }
+    auto cameraFrustum = resolveCamera().first.GetFrustum();
+    auto trueFar = cameraFrustum.GetNearFar().GetMax();
+    auto smallNear = std::min(FreeCamera::defaultNear, _dataModel.viewSettings().freeCamera()->_selSize / 10.f);
+    cameraFrustum.SetNearFar(pxr::GfRange1d(smallNear, smallNear * FreeCamera::maxSafeZResolution));
+    auto pickResults = pick(cameraFrustum);
+    if (!pickResults.has_value() || pickResults->outHitPrimPath == pxr::SdfPath::EmptyPath()) {
+        cameraFrustum.SetNearFar(pxr::GfRange1d(trueFar / FreeCamera::maxSafeZResolution, trueFar));
+        pickResults = pick(cameraFrustum);
+    }
 
-void StageView::pick() {}
+    if (pickResults.has_value() && pickResults->outHitPrimPath != pxr::SdfPath::EmptyPath()) {
+        _dataModel.viewSettings().freeCamera()->setClosestVisibleDistFromPoint(pickResults->outHitPoint);
+        updateView();
+    }
+}
 
-void StageView::computePickFrustum() {}
+std::optional<StageView::PickResult> StageView::pick(const pxr::GfFrustum &pickFrustum) {
+    auto renderer = _getRenderer();
+    if (!_dataModel.stage() || !renderer) {
+        // error has already been issued
+        return {};
+    }
 
-void StageView::pickObject() {}
+    // Need a correct OpenGL Rendering context for FBOs
+    //   makeCurrent();
+
+    // update rendering parameters
+    _renderParams.frame = _dataModel.currentFrame();
+    _renderParams.complexity = _dataModel.viewSettings().complexity().value();
+    _renderParams.drawMode = _renderModeDict[_dataModel.viewSettings().renderMode()];
+    _renderParams.showGuides = _dataModel.viewSettings().displayGuide();
+    _renderParams.showProxy = _dataModel.viewSettings().displayProxy();
+    _renderParams.showRender = _dataModel.viewSettings().displayRender();
+    _renderParams.forceRefresh = _forceRefresh;
+    _renderParams.cullStyle = _dataModel.viewSettings().cullBackfaces() ?
+                                  pxr::UsdImagingGLCullStyle::CULL_STYLE_BACK_UNLESS_DOUBLE_SIDED :
+                                  pxr::UsdImagingGLCullStyle::CULL_STYLE_NOTHING;
+    _renderParams.gammaCorrectColors = false;
+    _renderParams.enableIdRender = true;
+    _renderParams.enableSampleAlphaToCoverage = false;
+    _renderParams.enableSceneMaterials = _dataModel.viewSettings().enableSceneMaterials();
+    _renderParams.enableSceneLights = _dataModel.viewSettings().enableSceneLights();
+
+    PickResult pickResult;
+    auto result = renderer->TestIntersection(
+        pickFrustum.ComputeViewMatrix(),
+        pickFrustum.ComputeProjectionMatrix(),
+        _dataModel.stage().value()->GetPseudoRoot(), _renderParams,
+        &pickResult.outHitPoint, &pickResult.outHitNormal, &pickResult.outHitPrimPath,
+        &pickResult.outHitInstancerPath, &pickResult.outHitInstanceIndex, &pickResult.outInstancerContext);
+    if (result) {
+        return pickResult;
+    } else {
+        return std::nullopt;
+    }
+}
+
+std::pair<bool, pxr::GfFrustum> StageView::computePickFrustum(qreal x, qreal y) {
+    // compute pick frustum
+    auto [gfCamera, cameraAspect] = resolveCamera();
+    auto cameraFrustum = gfCamera.GetFrustum();
+
+    auto viewport = computeWindowViewport();
+    if (_cropImageToCameraViewport()) {
+        viewport = computeCameraViewport(cameraAspect);
+    }
+
+    // normalize position and pick size by the viewport size
+    auto point = pxr::GfVec2d((x - viewport.GetMin()[0]) / float(viewport.GetMax()[0]),
+                              (y - viewport.GetMin()[1]) / float(viewport.GetMax()[1]));
+    point[0] = (point[0] * 2.0 - 1.0);
+    point[1] = -1.0 * (point[1] * 2.0 - 1.0);
+
+    auto size = pxr::GfVec2d(1.0 / viewport.GetMax()[0], 1.0 / viewport.GetMax()[1]);
+
+    // "point" is normalized to the image viewport size, but if the image
+    // is cropped to the camera viewport, the image viewport won't fill the
+    // whole window viewport.  Clicking outside the image will produce
+    // normalized coordinates > 1 or < -1; in this case, we should skip
+    // picking.
+    auto inImageBounds = (abs(point[0]) <= 1.0 && abs(point[1]) <= 1.0);
+
+    return {inImageBounds, cameraFrustum.ComputeNarrowedFrustum(point, size)};
+}
+
+void StageView::pickObject(qreal x, qreal y, Qt::MouseButton button, Qt::KeyboardModifiers modifiers) {}
 
 void StageView::glDraw() {}
 
