@@ -53,9 +53,9 @@ public:
     void setUseExtentsHint(bool value);
 
     /// Get the set of included purposes used for bounding box calculations.
-    const pxr::TfTokenVector &includedPurposes();
+    std::set<pxr::TfToken> includedPurposes();
     /// Set a new set of included purposes for bounding box calculations.
-    void setIncludedPurposes(const pxr::TfTokenVector &value);
+    void setIncludedPurposes(const std::set<pxr::TfToken> &value);
 
     /// Compute the world-space bounds of a prim.
     pxr::GfBBox3d computeWorldBound(const pxr::UsdPrim &prim);

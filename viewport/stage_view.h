@@ -9,6 +9,7 @@
 #include <pxr/usd/sdf/path.h>
 #include <pxr/base/gf/vec3f.h>
 #include <pxr/usdImaging/usdImagingGL/renderParams.h>
+#include <pxr/usdImaging/usdImagingGL/engine.h>
 #include <QWidget>
 
 #include "selection_data_model.h"
@@ -62,7 +63,7 @@ public:
 class StageView : public QWidget {
     Q_OBJECT
 signals:
-    void signalBboxUpdateTimeChanged(int);
+    void signalBboxUpdateTimeChanged(long long);
 
     void signalPrimSelected(pxr::SdfPath, int, pxr::SdfPath, int, pxr::GfVec3f,
                             Qt::MouseButton,
@@ -89,109 +90,127 @@ public:
     };
 
     struct DefaultDataModel : public RootDataModel {
-        SelectionDataModel selectionDataModel;
-        ViewSettingsDataModel viewSettingsDataModel;
-
         DefaultDataModel()
-            : selectionDataModel(*this),
-              viewSettingsDataModel(*this, nullptr) {}
+            : _selectionDataModel(*this),
+              _viewSettingsDataModel(*this, nullptr) {}
+
+        inline SelectionDataModel &selection() {
+            return _selectionDataModel;
+        };
+
+        inline ViewSettingsDataModel &viewSettings() {
+            return _viewSettingsDataModel;
+        }
+
+    private:
+        SelectionDataModel _selectionDataModel;
+        ViewSettingsDataModel _viewSettingsDataModel;
     };
 
     [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
     explicit StageView(QWidget *parent) noexcept;
 
-    void renderParams();
+    pxr::UsdImagingGLRenderParams &renderParams();
 
-    void setRenderParams();
+    void setRenderParams(const pxr::UsdImagingGLRenderParams &value);
 
-    void autoClip();
+    bool autoClip();
 
-    void showReticles();
+    bool showReticles();
 
-    void cameraPrim();
+    bool _fitCameraInViewport();
 
-    void setCameraPrim();
+    bool _cropImageToCameraViewport();
 
-    void rolloverPicking();
+    std::optional<pxr::UsdPrim> cameraPrim();
 
-    void setRolloverPicking();
+    void setCameraPrim(std::optional<pxr::UsdPrim> value);
 
-    void fpsHUDInfo();
+    bool rolloverPicking() const;
 
-    void setFpsHUDInfo();
+    void setRolloverPicking(bool enabled);
 
-    void fpsHUDKeys();
+    std::vector<int> &fpsHUDInfo();
 
-    void setFpsHUDKeys();
+    void setFpsHUDInfo(const std::vector<int> &info);
 
-    void upperHUDInfo();
+    std::vector<int> &fpsHUDKeys();
 
-    void setUpperHUDInfo();
+    void setFpsHUDKeys(const std::vector<int> &info);
 
-    void HUDStatKeys();
+    std::vector<int> &upperHUDInfo();
 
-    void setHUDStatKeys();
+    void setUpperHUDInfo(const std::vector<int> &info);
 
-    void camerasWithGuides();
+    std::vector<int> &HUDStatKeys();
 
-    void setCamerasWithGuides();
+    void setHUDStatKeys(const std::vector<int> &keys);
 
-    void gfCamera();
+    void *camerasWithGuides();
 
-    void cameraFrustum();
+    void setCamerasWithGuides(void *value);
 
-    void rendererDisplayName();
+    /// Return the last computed Gf Camera
+    pxr::GfCamera &gfCamera();
 
-    void rendererAovName();
+    /// Unlike the StageView.freeCamera property, which is invalid/None
+    //  whenever we are viewing from a scene/stage camera, the 'cameraFrustum'
+    //  property will always return the last-computed camera frustum, regardless
+    //  of source.
+    pxr::GfFrustum cameraFrustum();
 
-    void _fitCameraInViewport();
+    const std::string &rendererDisplayName();
 
-    void _cropImageToCameraViewport();
+    const pxr::TfToken &rendererAovName();
 
-    void _getRenderer();
+    std::shared_ptr<pxr::UsdImagingGLEngine> _getRenderer();
 
-    void _handleRendererChanged();
+    void _handleRendererChanged(const pxr::TfToken &rendererId);
 
-    void _scaleMouseCoords();
+    QPoint _scaleMouseCoords(QPoint point);
 
+    /// Close the current renderer.
     void closeRenderer();
 
-    void GetRendererPlugins();
+    pxr::TfTokenVector GetRendererPlugins();
 
-    void GetRendererDisplayName();
+    std::string GetRendererDisplayName(const pxr::TfToken &rendererId);
 
-    void GetCurrentRendererId();
+    pxr::TfToken GetCurrentRendererId();
 
-    void SetRendererPlugin();
+    bool SetRendererPlugin(pxr::TfToken &);
 
-    void GetRendererAovs();
+    pxr::TfTokenVector GetRendererAovs();
 
-    void SetRendererAov();
+    bool SetRendererAov(const pxr::TfToken &aov);
 
-    void GetRendererSettingsList();
+    pxr::UsdImagingGLRendererSettingsList GetRendererSettingsList();
 
-    void GetRendererSetting();
+    pxr::VtValue GetRendererSetting(const pxr::TfToken &name);
 
-    void SetRendererSetting();
+    void SetRendererSetting(pxr::TfToken const &name,
+                            pxr::VtValue const &value);
 
-    void GetRendererCommands();
+    pxr::HdCommandDescriptors GetRendererCommands();
 
-    void InvokeRendererCommand();
+    bool InvokeRendererCommand(const pxr::HdCommandDescriptor &command);
 
-    void SetRendererPaused();
+    void SetRendererPaused(bool paused);
 
-    void IsPauseRendererSupported();
+    bool IsPauseRendererSupported();
 
-    void IsRendererConverged();
+    bool IsRendererConverged();
 
-    void SetRendererStopped();
+    void SetRendererStopped(bool);
 
-    void IsStopRendererSupported();
+    bool IsStopRendererSupported();
 
+    /// Set the USD Stage this widget will be displaying. To decommission
+    /// (even temporarily) this widget, supply None as 'stage'.
     void _stageReplaced();
 
-    void _createNewFreeCamera();
+    std::shared_ptr<FreeCamera> _createNewFreeCamera(ViewSettingsDataModel &viewSettings, bool isZUp);
 
     void DrawAxis();
 
@@ -203,33 +222,30 @@ public:
 
     void recomputeBBox();
 
-    void resetCam();
+    void resetCam(float frameFit = 1.1);
 
-    void updateView();
+    void updateView(bool resetCam = false, bool forceComputeBBox = false, float frameFit = 1.1);
 
     void updateSelection();
 
-    void _getEmptyBBox();
+    pxr::GfBBox3d _getEmptyBBox();
 
-    void _getDefaultBBox();
+    pxr::GfBBox3d _getDefaultBBox();
 
-    void _isInfiniteBBox();
+    bool _isInfiniteBBox(pxr::GfBBox3d bbox);
 
-    void getStageBBox();
+    pxr::GfBBox3d getStageBBox();
 
-    void getSelectionBBox();
+    pxr::GfBBox3d getSelectionBBox();
 
-    void renderSinglePass();
-
-    void initializeGL();
+    void renderSinglePass(pxr::UsdImagingGLDrawMode renderMode, bool renderSelHighlights);
 
     void updateGL();
 
-    void updateForPlayback();
+    std::optional<pxr::UsdPrim> getActiveSceneCamera();
 
-    void getActiveSceneCamera();
-
-    void hasLockedAspectRatio();
+    /// True if the camera has a defined aspect ratio that should not change when the viewport is resized.
+    bool hasLockedAspectRatio();
 
     void computeWindowPolicy();
 
@@ -253,7 +269,7 @@ public:
 
     QSize sizeHint();
 
-    void switchToFreeCamera();
+    void switchToFreeCamera(bool computeAndSetClosestDistance = true);
 
     void mousePressEvent(QMouseEvent *event) override;
 
@@ -289,7 +305,7 @@ private:
     DefaultDataModel _dataModel;
     bool _isFirstImage{true};
 
-    void *_lastComputedGfCamera{};
+    pxr::GfCamera _lastComputedGfCamera{};
     float _lastAspectRatio = 1.0;
     Mask _mask;
     Outline _maskOutline;
@@ -302,10 +318,9 @@ private:
     int _lastX = 0;
     int _lastY = 0;
 
-    void *_renderer{};
+    std::shared_ptr<pxr::UsdImagingGLEngine> _renderer{};
     bool _renderPauseState = false;
     bool _renderStopState = false;
-    bool _reportedContextError = false;
     std::unordered_map<RenderModes, pxr::UsdImagingGLDrawMode> _renderModeDict = {
         {RenderModes::WIREFRAME, pxr::UsdImagingGLDrawMode::DRAW_WIREFRAME},
         {RenderModes::WIREFRAME_ON_SURFACE, pxr::UsdImagingGLDrawMode::DRAW_WIREFRAME_ON_SURFACE},
@@ -340,5 +355,8 @@ private:
     void *_bboxVBO{};
     void *_cameraGuidesVBO{};
     int _vao = 0;
+
+    std::string _rendererDisplayName;
+    pxr::TfToken _rendererAovName;
 };
 }// namespace vox

@@ -19,6 +19,10 @@ struct RefinementComplexities {
     static const RefinementComplexities HIGH;
     static const RefinementComplexities VERY_HIGH;
 
+    inline float value() {
+        return _value;
+    }
+
 private:
     std::string _id;
     std::string _name;

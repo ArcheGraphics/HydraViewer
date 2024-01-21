@@ -34,7 +34,9 @@ std::vector<pxr::SdfPath> PrimSelection::getPrimPaths() {
     return paths;
 }
 
-void PrimSelection::getPrimPathInstances() {}
+const std::map<pxr::SdfPath, std::set<int>> &PrimSelection::getPrimPathInstances() {
+    return _selection;
+}
 
 void PrimSelection::getDiff() {}
 
@@ -133,7 +135,7 @@ std::vector<pxr::SdfPath> &SelectionDataModel::getLCDPaths() {
     return _lcdPathSelection;
 }
 
-void SelectionDataModel::getPrimPathInstances() {
+const std::map<pxr::SdfPath, std::set<int>> &SelectionDataModel::getPrimPathInstances() {
     _requireNotBatchingPrims();
     return _primSelection.getPrimPathInstances();
 }
@@ -180,8 +182,13 @@ std::vector<pxr::UsdPrim> SelectionDataModel::getLCDPrims() {
     return prims;
 }
 
-void SelectionDataModel::getPrimInstances() {
-    // todo
+std::map<pxr::UsdPrim, std::set<int>> SelectionDataModel::getPrimInstances() {
+    std::map<pxr::UsdPrim, std::set<int>> map;
+    for (auto &[path, instances] : getPrimPathInstances()) {
+        auto prim = _rootDataModel.stage().value()->GetPrimAtPath(path);
+        map.insert(std::make_pair(prim, instances));
+    }
+    return map;
 }
 
 void SelectionDataModel::switchToPrim(const pxr::UsdPrim &prim, int instance) {

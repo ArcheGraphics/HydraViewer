@@ -9,7 +9,9 @@
 #include <utility>
 #include <pxr/base/gf/frustum.h>
 
-FreeCamera::FreeCamera(bool isZup, float fov, float aspectRatio)
+FreeCamera::FreeCamera(bool isZup, float fov, float aspectRatio,
+                       std::optional<float> overrideNear,
+                       std::optional<float> overrideFar)
     : _isZUp{isZup} {
     _camera.SetPerspectiveFromAspectRatioAndFieldOfView(aspectRatio, fov,
                                                         pxr::GfCamera::FOVDirection::FOVVertical);

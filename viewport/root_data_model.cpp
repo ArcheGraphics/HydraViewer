@@ -64,11 +64,14 @@ void RootDataModel::setUseExtentsHint(bool value) {
     }
 }
 
-const pxr::TfTokenVector &RootDataModel::includedPurposes() {
-    return _bboxCache.GetIncludedPurposes();
+std::set<pxr::TfToken> RootDataModel::includedPurposes() {
+    auto purposes = _bboxCache.GetIncludedPurposes();
+    std::set<pxr::TfToken> set(purposes.begin(), purposes.end());
+    return set;
 }
-void RootDataModel::setIncludedPurposes(const pxr::TfTokenVector &value) {
-    _bboxCache.SetIncludedPurposes(value);
+void RootDataModel::setIncludedPurposes(const std::set<pxr::TfToken> &value) {
+    std::vector<pxr::TfToken> purposes(value.begin(), value.end());
+    _bboxCache.SetIncludedPurposes(purposes);
 }
 
 pxr::GfBBox3d RootDataModel::computeWorldBound(const pxr::UsdPrim &prim) {

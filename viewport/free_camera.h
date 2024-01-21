@@ -30,7 +30,9 @@ public:
     // is close to camera, when rendering for picking
     float maxGoodZResolution = 5e4;
 
-    explicit FreeCamera(bool isZup, float fov = 60, float aspectRatio = 1.0);
+    explicit FreeCamera(bool isZup, float fov = 60, float aspectRatio = 1.0,
+                        std::optional<float> overrideNear = std::nullopt,
+                        std::optional<float> overrideFar = std::nullopt);
 
     FreeCamera(pxr::GfCamera gfCamera, bool isZUp);
 
