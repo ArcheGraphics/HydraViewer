@@ -5,12 +5,6 @@
 //  property of any third parties.
 
 #include <QApplication>
-#include <QtGui/qevent.h>
-#include <fmt/format.h>
-#include "viewport/viewport.h"
-#include "viewport/camera.h"
-#include "viewport/framerate.h"
-
 #include "windows.h"
 
 int main(int argc, char *argv[]) {

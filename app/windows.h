@@ -8,7 +8,7 @@
 
 #include <QMainWindow>
 #include <QLabel>
-#include "viewport/viewport.h"
+#include "editor/viewport.h"
 
 namespace vox {
 class Windows : public QMainWindow {

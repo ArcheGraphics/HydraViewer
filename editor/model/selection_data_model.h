@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <QtCore/QObject>
+#include <QObject>
 #include <unordered_set>
 #include <pxr/usd/sdf/path.h>
 #include "root_data_model.h"

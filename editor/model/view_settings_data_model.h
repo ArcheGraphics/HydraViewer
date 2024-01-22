@@ -9,7 +9,7 @@
 #include "root_data_model.h"
 #include "common.h"
 #include "free_camera.h"
-#include <QtCore/QObject>
+#include <QObject>
 
 struct RefinementComplexities {
     RefinementComplexities(std::string compId, std::string name, float value);

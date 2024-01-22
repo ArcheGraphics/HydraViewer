@@ -5,7 +5,7 @@
 //  property of any third parties.
 
 #include "windows.h"
-#include "viewport/framerate.h"
+#include "editor/framerate.h"
 #include <QMenuBar>
 #include <QActionGroup>
 #include <fmt/format.h>

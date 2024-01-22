@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <QtCore/QObject>
+#include <QObject>
 #include <pxr/usd/usd/timeCode.h>
 #include <pxr/usd/usdGeom/bboxCache.h>
 #include <pxr/usd/usdGeom/xformCache.h>

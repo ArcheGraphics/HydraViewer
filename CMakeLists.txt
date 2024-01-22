@@ -29,5 +29,5 @@ find_package(fmt CONFIG REQUIRED)
 
 add_subdirectory(third_party)
 add_subdirectory(common)
-add_subdirectory(viewport)
+add_subdirectory(editor)
 add_subdirectory(app)

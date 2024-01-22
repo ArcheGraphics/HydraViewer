@@ -6,7 +6,7 @@
 
 cmake_minimum_required(VERSION 3.16)
 
-project(viewport LANGUAGES C CXX)
+project(editor LANGUAGES C CXX)
 
 set(COMMON_FILES
         swapchain.h
@@ -18,18 +18,19 @@ set(COMMON_FILES
         viewport.mm
         framerate.h
         framerate.cpp
-        root_data_model.h
-        root_data_model.cpp
-        free_camera.h
-        free_camera.cpp
         common.h
         common.cpp
-        selection_data_model.h
-        selection_data_model.cpp
-        view_settings_data_model.h
-        view_settings_data_model.cpp
-        custom_attributes.h
-        custom_attributes.cpp
+        # model
+        model/root_data_model.h
+        model/root_data_model.cpp
+        model/selection_data_model.h
+        model/selection_data_model.cpp
+        model/view_settings_data_model.h
+        model/view_settings_data_model.cpp
+        model/free_camera.h
+        model/free_camera.cpp
+        model/custom_attributes.h
+        model/custom_attributes.cpp
 )
 
 source_group("common\\" FILES ${COMMON_FILES})

@@ -12,8 +12,8 @@
 #include <pxr/usdImaging/usdImagingGL/engine.h>
 #include <QWidget>
 
-#include "selection_data_model.h"
-#include "view_settings_data_model.h"
+#include "model/selection_data_model.h"
+#include "model/view_settings_data_model.h"
 
 namespace vox {
 class Rect {

@@ -6,7 +6,7 @@
 
 #pragma once
 
-#include <QtCore/QObject>
+#include <QObject>
 #include <pxr/base/gf/vec3d.h>
 #include <pxr/base/gf/rotation.h>
 #include <pxr/base/gf/camera.h>
