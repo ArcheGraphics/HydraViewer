@@ -106,20 +106,20 @@ ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel)
     _fontSize = 10;
 }
 
-std::array<float, 4> ViewSettingsDataModel::cameraMaskColor() {
+pxr::GfVec4f ViewSettingsDataModel::cameraMaskColor() {
     return _cameraMaskColor;
 }
 
-void ViewSettingsDataModel::setCameraMaskColor(std::array<float, 4> value) {
+void ViewSettingsDataModel::setCameraMaskColor(pxr::GfVec4f value) {
     _cameraMaskColor = value;
     _visibleViewSetting();
 }
 
-std::array<float, 4> ViewSettingsDataModel::cameraReticlesColor() {
+pxr::GfVec4f ViewSettingsDataModel::cameraReticlesColor() {
     return _cameraReticlesColor;
 }
 
-void ViewSettingsDataModel::setCameraReticlesColor(std::array<float, 4> value) {
+void ViewSettingsDataModel::setCameraReticlesColor(pxr::GfVec4f value) {
     _cameraReticlesColor = value;
     _visibleViewSetting();
 }
@@ -560,7 +560,7 @@ void ViewSettingsDataModel::setClearColorText(ClearColors value) {
     _visibleViewSetting();
 }
 
-std::array<float, 4> ViewSettingsDataModel::clearColor() {
+pxr::GfVec4f ViewSettingsDataModel::clearColor() {
     return _to_colors(clearColorText());
 }
 
@@ -573,7 +573,7 @@ void ViewSettingsDataModel::setHighlightColorName(HighlightColors value) {
     _visibleViewSetting();
 }
 
-std::array<float, 4> ViewSettingsDataModel::highlightColor() {
+pxr::GfVec4f ViewSettingsDataModel::highlightColor() {
     return _to_colors(highlightColorName());
 }
 
@@ -685,7 +685,7 @@ void ViewSettingsDataModel::_freeCameraViewSetting() {
     emit signalSettingChanged();
 }
 
-std::array<float, 4> ViewSettingsDataModel::_to_colors(ClearColors value) {
+pxr::GfVec4f ViewSettingsDataModel::_to_colors(ClearColors value) {
     switch (value) {
         case ClearColors::BLACK: return {0.0, 0.0, 0.0, 1.0};
         case ClearColors::DARK_GREY: return {0.07074, 0.07074, 0.07074, 1.0};
@@ -694,7 +694,7 @@ std::array<float, 4> ViewSettingsDataModel::_to_colors(ClearColors value) {
     }
 }
 
-std::array<float, 4> ViewSettingsDataModel::_to_colors(HighlightColors value) {
+pxr::GfVec4f ViewSettingsDataModel::_to_colors(HighlightColors value) {
     switch (value) {
         case HighlightColors::WHITE: return {1.0, 1.0, 1.0, 0.5};
         case HighlightColors::YELLOW: return {1.0, 1.0, 0.0, 0.5};

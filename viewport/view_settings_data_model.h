@@ -18,7 +18,7 @@ struct RefinementComplexities {
     static const RefinementComplexities HIGH;
     static const RefinementComplexities VERY_HIGH;
 
-    inline float value() {
+    inline float value() const {
         return _value;
     }
 
@@ -71,15 +71,15 @@ public:
     static constexpr float DEFAULT_AMBIENT = 0.2;
     static constexpr float DEFAULT_SPECULAR = 0.1;
 
-    ViewSettingsDataModel(RootDataModel &rootDataModel);
+    explicit ViewSettingsDataModel(RootDataModel &rootDataModel);
 
-    std::array<float, 4> cameraMaskColor();
+    pxr::GfVec4f cameraMaskColor();
 
-    void setCameraMaskColor(std::array<float, 4> value);
+    void setCameraMaskColor(pxr::GfVec4f value);
 
-    std::array<float, 4> cameraReticlesColor();
+    pxr::GfVec4f cameraReticlesColor();
 
-    void setCameraReticlesColor(std::array<float, 4> value);
+    void setCameraReticlesColor(pxr::GfVec4f value);
 
     [[nodiscard]] float defaultMaterialAmbient() const;
     void setDefaultMaterialAmbient(float val);
@@ -275,13 +275,13 @@ public:
 
     void setClearColorText(ClearColors value);
 
-    std::array<float, 4> clearColor();
+    pxr::GfVec4f clearColor();
 
     HighlightColors highlightColorName();
 
     void setHighlightColorName(HighlightColors value);
 
-    std::array<float, 4> highlightColor();
+    pxr::GfVec4f highlightColor();
 
     SelectionHighlightModes selHighlightMode();
 
@@ -309,8 +309,8 @@ public:
 
 private:
     RootDataModel &_rootDataModel;
-    std::array<float, 4> _cameraMaskColor{};
-    std::array<float, 4> _cameraReticlesColor{};
+    pxr::GfVec4f _cameraMaskColor{};
+    pxr::GfVec4f _cameraReticlesColor{};
     float _defaultMaterialAmbient;
     float _defaultMaterialSpecular;
     bool _redrawOnScrub;
@@ -398,7 +398,7 @@ private:
 
     void _freeCameraViewSetting();
 
-    static std::array<float, 4> _to_colors(ClearColors value);
+    static pxr::GfVec4f _to_colors(ClearColors value);
 
-    static std::array<float, 4> _to_colors(HighlightColors value);
+    static pxr::GfVec4f _to_colors(HighlightColors value);
 };

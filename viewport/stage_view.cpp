@@ -512,7 +512,7 @@ void StageView::renderSinglePass(pxr::UsdImagingGLDrawMode renderMode, bool rend
     _renderParams.highlight = renderSelHighlights;
     _renderParams.enableSceneMaterials = _dataModel.viewSettings().enableSceneMaterials();
     _renderParams.enableSceneLights = _dataModel.viewSettings().enableSceneLights();
-    _renderParams.clearColor = pxr::GfVec4f(_dataModel.viewSettings().clearColor().data());
+    _renderParams.clearColor = _dataModel.viewSettings().clearColor();
 
     auto ccMode = _dataModel.viewSettings().colorCorrectionMode();
     _renderParams.colorCorrectionMode = pxr::TfToken(to_constants(ccMode));
@@ -523,7 +523,7 @@ void StageView::renderSinglePass(pxr::UsdImagingGLDrawMode renderMode, bool rend
     }
     auto pseudoRoot = _dataModel.stage().value()->GetPseudoRoot();
 
-    renderer->SetSelectionColor(pxr::GfVec4f(_dataModel.viewSettings().highlightColor().data()));
+    renderer->SetSelectionColor(_dataModel.viewSettings().highlightColor());
     renderer->SetRendererSetting(
         pxr::TfToken("domeLightCameraVisibility"),
         pxr::VtValue(_dataModel.viewSettings().domeLightTexturesVisible()));
