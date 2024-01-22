@@ -8,8 +8,6 @@ cmake_minimum_required(VERSION 3.16)
 
 project(viewport LANGUAGES C CXX)
 
-find_package(nlohmann_json CONFIG REQUIRED)
-
 set(COMMON_FILES
         swapchain.h
         swapchain.cpp
@@ -30,8 +28,6 @@ set(COMMON_FILES
         selection_data_model.cpp
         view_settings_data_model.h
         view_settings_data_model.cpp
-        settings.h
-        settings.cpp
         custom_attributes.h
         custom_attributes.cpp
 )
@@ -53,7 +49,6 @@ target_include_directories(${PROJECT_NAME} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} .
 target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt::Core
         Qt::Widgets
-        nlohmann_json::nlohmann_json
         fmt::fmt
         spdlog::spdlog
         metal-cpp

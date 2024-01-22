@@ -17,8 +17,5 @@
   }, {
     "name" : "vcpkg-cmake",
     "version>=" : "2023-05-04"
-  }, {
-    "name" : "nlohmann-json",
-    "version>=" : "3.11.3"
   } ]
 }

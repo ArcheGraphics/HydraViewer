@@ -101,7 +101,7 @@ public:
     struct DefaultDataModel : public RootDataModel {
         DefaultDataModel()
             : _selectionDataModel(*this),
-              _viewSettingsDataModel(*this, nullptr) {}
+              _viewSettingsDataModel(*this) {}
 
         inline SelectionDataModel &selection() {
             return _selectionDataModel;

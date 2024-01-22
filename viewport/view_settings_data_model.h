@@ -6,7 +6,6 @@
 
 #pragma once
 
-#include "settings.h"
 #include "root_data_model.h"
 #include "common.h"
 #include "free_camera.h"
@@ -47,7 +46,7 @@ private:
 };
 
 /// Data model containing settings related to the rendered view of a USD file.
-class ViewSettingsDataModel : public QObject, public StateSource {
+class ViewSettingsDataModel : public QObject {
     Q_OBJECT
 signals:
     /// emitted when any view setting changes
@@ -72,9 +71,7 @@ public:
     static constexpr float DEFAULT_AMBIENT = 0.2;
     static constexpr float DEFAULT_SPECULAR = 0.1;
 
-    ViewSettingsDataModel(RootDataModel &rootDataModel, StateSource *parent);
-
-    void onSaveState(nlohmann::json &state) override;
+    ViewSettingsDataModel(RootDataModel &rootDataModel);
 
     std::array<float, 4> cameraMaskColor();
 

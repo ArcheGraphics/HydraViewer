@@ -31,137 +31,79 @@ const std::string &OCIOSettings::colorSpace() {
     return _colorSpace;
 }
 
-ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel, StateSource *parent)
-    : QObject(this), StateSource(parent, "model"),
+ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel)
+    : QObject(this),
       _rootDataModel{rootDataModel} {
-    _cameraMaskColor = stateProperty<std::array<float, 4>>("cameraMaskColor", {0.1, 0.1, 0.1, 1.0});
-    _cameraReticlesColor = stateProperty<std::array<float, 4>>("cameraReticlesColor", {0.0, 0.7, 1.0, 1.0});
-    _defaultMaterialAmbient = stateProperty("defaultMaterialAmbient", DEFAULT_AMBIENT);
-    _defaultMaterialSpecular = stateProperty("defaultMaterialSpecular", DEFAULT_SPECULAR);
-    _redrawOnScrub = stateProperty("redrawOnScrub", true);
-    _renderMode = stateProperty("renderMode", RenderModes::SMOOTH_SHADED);
-    _freeCameraFOV = stateProperty("freeCameraFOV", 60.f);
-    _freeCameraAspect = stateProperty("freeCameraAspect", 1.f);
+    _cameraMaskColor = {0.1, 0.1, 0.1, 1.0};
+    _cameraReticlesColor = {0.0, 0.7, 1.0, 1.0};
+    _defaultMaterialAmbient = DEFAULT_AMBIENT;
+    _defaultMaterialSpecular = DEFAULT_SPECULAR;
+    _redrawOnScrub = true;
+    _renderMode = RenderModes::SMOOTH_SHADED;
+    _freeCameraFOV = 60.f;
+    _freeCameraAspect = 1.f;
     // For freeCameraOverrideNear/Far, Use -inf as a sentinel value to mean
     // None. (We cannot use None directly because that would cause a type-
     // checking error in Settings.)
     _clippingPlaneNoneValue = -std::numeric_limits<float>::infinity();
-    _freeCameraOverrideNear = stateProperty("freeCameraOverrideNear", _clippingPlaneNoneValue);
-    _freeCameraOverrideFar = stateProperty("freeCameraOverrideFar", _clippingPlaneNoneValue);
+    _freeCameraOverrideNear = _clippingPlaneNoneValue;
+    _freeCameraOverrideFar = _clippingPlaneNoneValue;
     if (_freeCameraOverrideNear == _clippingPlaneNoneValue)
         _freeCameraOverrideNear = std::nullopt;
     if (_freeCameraOverrideFar == _clippingPlaneNoneValue)
         _freeCameraOverrideFar = std::nullopt;
-    _lockFreeCameraAspect = stateProperty("lockFreeCameraAspect", false);
-    _colorCorrectionMode = stateProperty("colorCorrectionMode", ColorCorrectionModes::SRGB);
+    _lockFreeCameraAspect = false;
+    _colorCorrectionMode = ColorCorrectionModes::SRGB;
     _ocioSettings = OCIOSettings();
-    _pickMode = stateProperty("pickMode", PickModes::PRIMS);
+    _pickMode = PickModes::PRIMS;
 
     // We need to store the trinary selHighlightMode state here,
     // because the stageView only deals in true/false (because it
     // cannot know anything about playback state).
-    _selHighlightMode = stateProperty("selectionHighlightMode", SelectionHighlightModes::ONLY_WHEN_PAUSED);
+    _selHighlightMode = SelectionHighlightModes::ONLY_WHEN_PAUSED;
 
     // We store the highlightColorName so that we can compare state during
     // initialization without inverting the name->value logic
-    _highlightColorName = stateProperty("highlightColor", HighlightColors::YELLOW);
-    _ambientLightOnly = stateProperty("cameraLightEnabled", true);
-    _domeLightEnabled = stateProperty("domeLightEnabled", false);
-    _domeLightTexturesVisible = stateProperty("domeLightTexturesVisible", true);
-    _clearColorText = stateProperty("backgroundColor", ClearColors::DARK_GREY);
-    _autoComputeClippingPlanes = stateProperty("autoComputeClippingPlanes", false);
-    _showBBoxPlayback = stateProperty("showBBoxesDuringPlayback", false);
-    _showBBoxes = stateProperty("showBBoxes", true);
-    _showAABBox = stateProperty("showAABBox", true);
-    _showOBBox = stateProperty("showOBBox", true);
-    _displayGuide = stateProperty("displayGuide", false);
-    _displayProxy = stateProperty("displayProxy", true);
-    _displayRender = stateProperty("displayRender", false);
-    _displayPrimId = stateProperty("displayPrimId", false);
-    _enableSceneMaterials = stateProperty("enableSceneMaterials", true);
-    _enableSceneLights = stateProperty("enableSceneLights", true);
-    _cullBackfaces = stateProperty("cullBackfaces", false);
-    _showInactivePrims = stateProperty("showInactivePrims", true);
+    _highlightColorName = HighlightColors::YELLOW;
+    _ambientLightOnly = true;
+    _domeLightEnabled = false;
+    _domeLightTexturesVisible = true;
+    _clearColorText = ClearColors::DARK_GREY;
+    _autoComputeClippingPlanes = false;
+    _showBBoxPlayback = false;
+    _showBBoxes = true;
+    _showAABBox = true;
+    _showOBBox = true;
+    _displayGuide = false;
+    _displayProxy = true;
+    _displayRender = false;
+    _displayPrimId = false;
+    _enableSceneMaterials = true;
+    _enableSceneLights = true;
+    _cullBackfaces = false;
+    _showInactivePrims = true;
 
-    showAllMasterPrims = stateProperty("showAllMasterPrims", false);
-    _showAllPrototypePrims = stateProperty("showAllPrototypePrims", false);
+    showAllMasterPrims = false;
+    _showAllPrototypePrims = false;
 
-    _showUndefinedPrims = stateProperty("showUndefinedPrims", false);
-    _showAbstractPrims = stateProperty("showAbstractPrims", false);
-    _showPrimDisplayNames = stateProperty("showPrimDisplayNames", true);
-    _rolloverPrimInfo = stateProperty("rolloverPrimInfo", false);
-    _displayCameraOracles = stateProperty("cameraOracles", false);
-    _cameraMaskMode = stateProperty("cameraMaskMode", CameraMaskModes::NONE);
-    _showMask_Outline = stateProperty("cameraMaskOutline", false);
-    _showReticles_Inside = stateProperty("cameraReticlesInside", false);
-    _showReticles_Outside = stateProperty("cameraReticlesOutside", false);
-    _showHUD = stateProperty("showHUD", true);
+    _showUndefinedPrims = false;
+    _showAbstractPrims = false;
+    _showPrimDisplayNames = true;
+    _rolloverPrimInfo = false;
+    _displayCameraOracles = false;
+    _cameraMaskMode = CameraMaskModes::NONE;
+    _showMask_Outline = false;
+    _showReticles_Inside = false;
+    _showReticles_Outside = false;
+    _showHUD = true;
 
-    _showHUD_Info = stateProperty("showHUDInfo", false);
+    _showHUD_Info = false;
 
-    _showHUD_Complexity = stateProperty("showHUDComplexity", true);
-    _showHUD_Performance = stateProperty("showHUDPerformance", true);
-    _showHUD_GPUstats = stateProperty("showHUDGPUStats", false);
+    _showHUD_Complexity = true;
+    _showHUD_Performance = true;
+    _showHUD_GPUstats = false;
 
-    _fontSize = stateProperty("fontSize", 10);
-}
-
-void ViewSettingsDataModel::onSaveState(nlohmann::json &state) {
-    state["cameraMaskColor"] = _cameraMaskColor;
-    state["cameraReticlesColor"] = _cameraReticlesColor;
-    state["defaultMaterialAmbient"] = _defaultMaterialAmbient;
-    state["defaultMaterialSpecular"] = _defaultMaterialSpecular;
-    state["redrawOnScrub"] = _redrawOnScrub;
-    state["renderMode"] = _renderMode;
-    state["freeCameraFOV"] = _freeCameraFOV;
-    auto freeCameraOverrideNear = _freeCameraOverrideNear;
-    if (!freeCameraOverrideNear.has_value())
-        freeCameraOverrideNear = _clippingPlaneNoneValue;
-    state["freeCameraOverrideNear"] = freeCameraOverrideNear.value();
-    auto freeCameraOverrideFar = _freeCameraOverrideFar;
-    if (!freeCameraOverrideFar.has_value())
-        freeCameraOverrideFar = _clippingPlaneNoneValue;
-    state["freeCameraOverrideFar"] = freeCameraOverrideFar.value();
-    state["freeCameraAspect"] = _freeCameraAspect;
-    state["lockFreeCameraAspect"] = _lockFreeCameraAspect;
-    state["colorCorrectionMode"] = _colorCorrectionMode;
-    state["pickMode"] = _pickMode;
-    state["selectionHighlightMode"] = _selHighlightMode;
-    state["highlightColor"] = _highlightColorName;
-    state["cameraLightEnabled"] = _ambientLightOnly;
-    state["domeLightEnabled"] = _domeLightEnabled;
-    state["domeLightTexturesVisible"] = _domeLightTexturesVisible;
-    state["backgroundColor"] = _clearColorText;
-    state["autoComputeClippingPlanes"] = _autoComputeClippingPlanes;
-    state["showBBoxesDuringPlayback"] = _showBBoxPlayback;
-    state["showBBoxes"] = _showBBoxes;
-    state["showAABBox"] = _showAABBox;
-    state["showOBBox"] = _showOBBox;
-    state["displayGuide"] = _displayGuide;
-    state["displayProxy"] = _displayProxy;
-    state["displayRender"] = _displayRender;
-    state["displayPrimId"] = _displayPrimId;
-    state["enableSceneMaterials"] = _enableSceneMaterials;
-    state["enableSceneLights"] = _enableSceneLights;
-    state["cullBackfaces"] = _cullBackfaces;
-    state["showInactivePrims"] = _showInactivePrims;
-    state["showAllPrototypePrims"] = _showAllPrototypePrims;
-    state["showAllMasterPrims"] = _showAllPrototypePrims;
-    state["showUndefinedPrims"] = _showUndefinedPrims;
-    state["showAbstractPrims"] = _showAbstractPrims;
-    state["showPrimDisplayNames"] = _showPrimDisplayNames;
-    state["rolloverPrimInfo"] = _rolloverPrimInfo;
-    state["cameraOracles"] = _displayCameraOracles;
-    state["cameraMaskMode"] = _cameraMaskMode;
-    state["cameraMaskOutline"] = _showMask_Outline;
-    state["cameraReticlesInside"] = _showReticles_Inside;
-    state["cameraReticlesOutside"] = _showReticles_Outside;
-    state["showHUD"] = _showHUD;
-    state["showHUDInfo"] = _showHUD_Info;
-    state["showHUDComplexity"] = _showHUD_Complexity;
-    state["showHUDPerformance"] = _showHUD_Performance;
-    state["showHUDGPUStats"] = _showHUD_GPUstats;
-    state["fontSize"] = _fontSize;
+    _fontSize = 10;
 }
 
 std::array<float, 4> ViewSettingsDataModel::cameraMaskColor() {
