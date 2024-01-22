@@ -366,7 +366,10 @@ void Viewport::requestFrame() {
 }
 
 void Viewport::recreateSwapChain(QSize size) {
-    _swapchain = std::make_unique<Swapchain>(_device, winId(), size.width(), size.height());
+    if (!_swapchain) {
+        _swapchain = std::make_unique<Swapchain>(_device, winId(), size.width(), size.height());
+    }
+    _swapchain->resize(size.width(), size.height());
     requestFrame();
 }
 

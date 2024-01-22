@@ -31,6 +31,8 @@ public:
 
     void set_name(std::string_view name) noexcept;
 
+    void resize(int width, int height);
+
 private:
     void create_pso(MTL::Device *device);
 

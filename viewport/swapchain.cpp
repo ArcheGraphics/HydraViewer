@@ -27,6 +27,10 @@ Swapchain::Swapchain(MTL::Device *device, uint64_t window_handle,
     create_pso(device);
 }
 
+void Swapchain::resize(int width, int height) {
+    _layer->setDrawableSize(CGSizeMake(width, height));
+}
+
 Swapchain::~Swapchain() noexcept {
     if (_command_label) { _command_label->release(); }
     _render_pass_desc->release();
