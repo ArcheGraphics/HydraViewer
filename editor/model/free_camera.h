@@ -163,8 +163,8 @@ private:
     pxr::GfMatrix4d _yzUpMatrix{};
     pxr::GfMatrix4d _yzUpInvMatrix{};
     std::optional<float> _closestVisibleDist;
-    std::optional<float> _lastFramedDist;
-    std::optional<float> _lastFramedClosestDist;
+    float _lastFramedDist;
+    float _lastFramedClosestDist;
 
     // Updates the camera's transform matrix, that is, the matrix that brings
     // the camera to the origin, with the camera view pointing down:

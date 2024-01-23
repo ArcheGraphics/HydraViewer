@@ -6,8 +6,8 @@
 
 #include "windows.h"
 #include "editor/framerate.h"
-#include "editor/stage_tree.h"
-#include "editor/render_settings.h"
+#include "panels/stage_tree.h"
+#include "panels/render_settings.h"
 #include "editor/node/graph_model.h"
 #include <QMenuBar>
 #include <QActionGroup>

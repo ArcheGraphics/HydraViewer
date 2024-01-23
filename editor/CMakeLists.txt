@@ -15,12 +15,12 @@ set(COMMON_FILES
         framerate.cpp
         stage_view.h
         stage_view.cpp
-        stage_tree.h
-        stage_tree.cpp
-        render_settings.h
-        render_settings.cpp
         windows.h
         windows.cpp
+        panels/stage_tree.h
+        panels/stage_tree.cpp
+        panels/render_settings.h
+        panels/render_settings.cpp
         # node
         node/graph_model.h
         node/graph_model.cpp

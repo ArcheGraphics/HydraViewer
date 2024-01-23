@@ -15,6 +15,8 @@ FreeCamera::FreeCamera(bool isZup, float fov, float aspectRatio,
     : _isZUp{isZup} {
     _camera.SetPerspectiveFromAspectRatioAndFieldOfView(aspectRatio, fov,
                                                         pxr::GfCamera::FOVDirection::FOVVertical);
+    _overrideNear = overrideNear;
+    _overrideFar = overrideFar;
     resetClippingPlanes();
 
     if (isZup) {
@@ -49,7 +51,35 @@ void FreeCamera::_pushToCameraTransform() {
     _cameraTransformDirty = false;
 }
 
-void FreeCamera::_pullFromCameraTransform() {}
+void FreeCamera::_pullFromCameraTransform() {
+    auto cam_transform = _camera.GetTransform();
+    auto dist = _camera.GetFocusDistance();
+    auto frustum = _camera.GetFrustum();
+    auto cam_pos = frustum.GetPosition();
+    auto cam_axis = frustum.ComputeViewDirection();
+
+    // Compute translational parts
+    _dist = dist;
+    _selSize = dist / 10.0;
+    _center = cam_pos + dist * cam_axis;
+
+    // _YZUpMatrix influences the behavior about how the
+    // FreeCamera will tumble. It is the identity or a rotation about the
+    // x-Axis.
+
+    // Compute rotational part
+    auto transform = cam_transform * _yzUpMatrix;
+    transform.Orthonormalize();
+    auto rotation = transform.ExtractRotation();
+
+    // Decompose and set angles
+    auto decompose = -rotation.Decompose(pxr::GfVec3d::YAxis(), pxr::GfVec3d::XAxis(), pxr::GfVec3d::ZAxis());
+    _rotTheta = decompose[0];
+    _rotPhi = decompose[1];
+    _rotPsi = decompose[2];
+
+    _cameraTransformDirty = true;
+}
 
 std::pair<double, double> FreeCamera::_rangeOfBoxAlongRay(const pxr::GfRay &camRay,
                                                           const pxr::GfBBox3d &bbox,
@@ -97,7 +127,93 @@ void FreeCamera::resetClippingPlanes() {
     _camera.SetClippingRange(pxr::GfRange1f(near, far));
 }
 
-void FreeCamera::setClippingPlanes(pxr::GfBBox3d stageBBox) {}
+void FreeCamera::setClippingPlanes(pxr::GfBBox3d stageBBox) {
+    bool debugClipping = true;
+    float computedNear, computedFar;
+    // If the scene bounding box is empty, or we are fully on manual
+    // override, then just initialize to defaults.
+    if (stageBBox.GetRange().IsEmpty() || (_overrideNear && _overrideFar)) {
+        computedNear = FreeCamera::defaultNear;
+        computedFar = FreeCamera::defaultFar;
+    } else {
+        // The problem: We want to include in the camera frustum all the
+        // geometry the viewer should be able to see, i.e. everything within
+        // the inifinite frustum starting at distance epsilon from the
+        // camera it  However, the further the imageable geometry is
+        // from the near-clipping plane, the less depth precision we will
+        // have to resolve nearly colinear/incident polygons (which we get
+        // especially with any doubleSided geometry).  We can run into such
+        // situations astonishingly easily with large sets when we are
+        // focussing in on just a part of a set that spans 10^5 units or
+        // more.
+
+        // Our solution: Begin by projecting the endpoints of the imageable
+        // world's bounds onto the ray piercing the center of the camera
+        // frustum, and take the near/far clipping distances from its
+        // extent, clamping at a positive value for near.  To address the
+        // z-buffer precision issue, we rely on someone having told us how
+        // close the closest imageable geometry actually is to the camera,
+        // by having called setClosestVisibleDistFromPoint(). This gives us
+        // the most liberal near distance we can use and not clip the
+        // geometry we are looking at.  We actually choose some fraction of
+        // that distance instead, because we do not expect the someone to
+        // recompute the closest point with every camera manipulation, as
+        // it can be expensive (we do emit signalFrustumChanged to notify
+        // them, however).  We only use this if the current range of the
+        // bbox-based frustum will have precision issues.
+        auto frustum = _camera.GetFrustum();
+        auto camPos = frustum.GetPosition();
+
+        auto camRay = pxr::GfRay(camPos, frustum.ComputeViewDirection());
+        auto result = _rangeOfBoxAlongRay(camRay, stageBBox, debugClipping);
+        computedNear = result.first;
+        computedFar = result.second;
+        auto precisionNear = computedFar / FreeCamera::maxGoodZResolution;
+
+        if (_closestVisibleDist) {
+            if (debugClipping)
+                qDebug("Proposed near for precision: %f, closestDist: %f", precisionNear, _closestVisibleDist.value());
+
+            // Because of our concern about orbit/truck causing
+            // clipping, make sure we don't go closer than half the
+            // distance to the closest visible point
+            auto halfClose = _closestVisibleDist.value() / 2.f;
+
+            if (_closestVisibleDist < _lastFramedClosestDist) {
+                // This can happen if we have zoomed in closer since
+                // the last time setClosestVisibleDistFromPoint() was called.
+                // Clamp to precisionNear, which gives a balance between
+                // clipping as we zoom in, vs bad z-fighting as we zoom in.
+                // See AdjustDistance() for comment about better solution.
+                halfClose = std::max(std::max(precisionNear, halfClose), computedNear);
+                if (debugClipping)
+                    qDebug("ADJUSTING: Accounting for zoom-in");
+            }
+
+            if (halfClose < computedNear) {
+                // If there's stuff very very close to the camera, it
+                // may have been clipped by computedNear.  Get it back!
+                computedNear = halfClose;
+                if (debugClipping)
+                    qDebug("ADJUSTING: closestDist was closer than bboxNear");
+            } else if (precisionNear > computedNear) {
+                computedNear = std::min((precisionNear + halfClose) / 2.f, halfClose);
+                if (debugClipping) {
+                    qDebug("ADJUSTING: gaining precision by pushing out");
+                }
+            }
+        }
+    }
+    auto near = _overrideNear.value_or(computedNear);
+    auto far = _overrideFar.value_or(computedFar);
+    // Make sure far is greater than near
+    far = std::max(near + 1, far);
+
+    if (debugClipping)
+        qDebug("***Final Near/Far: %f, %f", near, far);
+
+    _camera.SetClippingRange(pxr::GfRange1f(near, far));
+}
 
 pxr::GfCamera FreeCamera::computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip) {
     _pushToCameraTransform();
@@ -109,7 +225,27 @@ pxr::GfCamera FreeCamera::computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip
     return _camera;
 }
 
-void FreeCamera::frameSelection(pxr::GfBBox3d selBBox, float frameFit) {}
+void FreeCamera::frameSelection(pxr::GfBBox3d selBBox, float frameFit) {
+    _closestVisibleDist = std::nullopt;
+
+    auto center = selBBox.ComputeCentroid();
+    auto selRange = selBBox.ComputeAlignedRange();
+    auto size = selRange.GetSize();
+    _selSize = std::max(std::max(size[0], size[1]), size[2]);
+    if (orthographic()) {
+        setFov(_selSize * frameFit);
+        setDist(_selSize + FreeCamera::defaultNear);
+    } else {
+        auto halfFov = std::max(fov() * 0.5, 0.5);// don't divide by zero
+        auto lengthToFit = _selSize * frameFit * 0.5;
+        setDist(lengthToFit / atan(pxr::GfDegreesToRadians(halfFov)));
+        // Very small objects that fill out their bounding boxes (like cubes)
+        // may well pierce our 1 unit default near-clipping plane. Make sure
+        // that doesn't happen.
+        if (dist() < FreeCamera::defaultNear + _selSize * 0.5)
+            setDist(FreeCamera::defaultNear + lengthToFit);
+    }
+}
 
 void FreeCamera::setClosestVisibleDistFromPoint(pxr::GfVec3d point) {
     auto frustum = _camera.GetFrustum();
@@ -117,7 +253,7 @@ void FreeCamera::setClosestVisibleDistFromPoint(pxr::GfVec3d point) {
     auto camRay = pxr::GfRay(camPos, frustum.ComputeViewDirection());
     _closestVisibleDist = camRay.FindClosestPoint(point)[1];
     _lastFramedDist = dist();
-    _lastFramedClosestDist = _closestVisibleDist;
+    _lastFramedClosestDist = _closestVisibleDist.value();
 }
 
 float FreeCamera::ComputePixelsToWorldFactor(float viewportHeight) {
@@ -137,7 +273,37 @@ void FreeCamera::Tumble(float dTheta, float dPhi) {
     emit signalFrustumChanged();
 }
 
-void FreeCamera::AdjustDistance(float scaleFactor) {}
+void FreeCamera::AdjustDistance(float scaleFactor) {
+    // When dist gets very small, you can get stuck and not be able to
+    // zoom back out, if you just keep multiplying.  Switch to addition
+    // in that case, choosing an incr that works for the scale of the
+    // framed geometry.
+    if (scaleFactor > 1 && dist() < 2) {
+        auto selBasedIncr = _selSize / 25.f;
+        scaleFactor -= 1.0;
+        setDist(dist() + std::min(selBasedIncr, scaleFactor));
+    } else {
+        setDist(dist() * scaleFactor);
+    }
+
+    // Make use of our knowledge that we are changing distance to camera
+    // to also adjust _closestVisibleDist to keep it useful.  Make sure
+    // not to recede farther than the last *computed* closeDist, since that
+    // will generally cause unwanted clipping of close objects.
+    // XXX:  This heuristic does a good job of preventing undesirable
+    // clipping as we zoom in and out, but sacrifices the z-buffer
+    // precision we worked hard to get.  If Hd/UsdImaging could cheaply
+    // provide us with the closest-point from the last-rendered image,
+    // we could use it safely here to update _closestVisibleDist much
+    // more accurately than this calculation.
+    if (_closestVisibleDist) {
+        if (dist() > _lastFramedDist) {
+            _closestVisibleDist = _lastFramedClosestDist;
+        } else {
+            _closestVisibleDist = _lastFramedClosestDist - _lastFramedDist + dist();
+        }
+    }
+}
 
 void FreeCamera::Truck(float deltaRight, float deltaUp) {
     // need to update the camera transform before we access the frustum
