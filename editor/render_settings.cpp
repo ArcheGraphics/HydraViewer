@@ -60,15 +60,19 @@ void RenderSettingsWidget::_clear_widgets() {
 
 void RenderSettingsWidget::_populate_widgets() {
     auto settings = _viewport->rendererSettingLists();
-    auto label_flags = Qt::AlignCenter | Qt::AlignRight;
 
     for (int row = 0; row < settings.size(); ++row) {
         auto &setting = settings[row];
         auto label_widget = new QLabel(fmt::format("{}: ", setting.key.data()).c_str());
-        grid_layout->addWidget(label_widget, row, 0, label_flags);
+        label_widget->setMaximumWidth(150);
+        label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
+        grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
 
         auto value_widget = _create_value_widget(setting);
-        grid_layout->addWidget(value_widget, row, 1);
+        if (value_widget) {
+            value_widget->setMaximumWidth(80);
+            grid_layout->addWidget(value_widget, row, 1, Qt::AlignRight);
+        }
     }
 }
 

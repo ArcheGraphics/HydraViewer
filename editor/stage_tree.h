@@ -52,7 +52,7 @@ private:
 
     static pxr::UsdPrimSiblingRange getFilteredPrimChildren(const pxr::UsdPrim &prim);
 
-    void toggleHierarchyVisibility(QTreeWidgetItem *item, bool set_visibility_to);
+    void toggleHierarchyVisibility(QTreeWidgetItem *item, std::optional<bool> set_visibility_to = std::nullopt);
 
 private:
     DataModel &_model;

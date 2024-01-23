@@ -98,7 +98,7 @@ PrimItemWidget *StageTreeWidget::populateItemTree(const pxr::UsdPrim &prim, QTre
     if (pxr::UsdGeomImageable(prim).GetVisibilityAttr()) {
         auto vis_button = new PrimVisButton();
         connect(vis_button, &QAbstractButton::clicked, this, [=](bool set_visibility_to) {
-            toggleHierarchyVisibility(created_item, set_visibility_to);
+            toggleHierarchyVisibility(created_item, std::nullopt);
         });
         setItemWidget(created_item, 1, vis_button);
     }
@@ -114,13 +114,21 @@ pxr::UsdPrimSiblingRange StageTreeWidget::getFilteredPrimChildren(const pxr::Usd
     return prim.GetFilteredChildren(pxr::UsdPrimIsActive);
 }
 
-void StageTreeWidget::toggleHierarchyVisibility(QTreeWidgetItem *item, bool set_visibility_to) {
+void StageTreeWidget::toggleHierarchyVisibility(QTreeWidgetItem *item, std::optional<bool> set_visibility_to) {
     auto item_vis_button = static_cast<PrimVisButton *>(itemWidget(item, 1));
-    item_vis_button->setVisibility(set_visibility_to);
+    if (item_vis_button) {
+        bool visibility_to;
+        if (set_visibility_to) {
+            visibility_to = set_visibility_to.value();
+            item_vis_button->setVisibility(visibility_to);
+        } else {
+            visibility_to = item_vis_button->toggleVisibility();
+        }
 
-    for (int i = 0; i < item->childCount(); ++i) {
-        auto child_item = item->child(i);
-        toggleHierarchyVisibility(child_item, set_visibility_to);
+        for (int i = 0; i < item->childCount(); ++i) {
+            auto child_item = item->child(i);
+            toggleHierarchyVisibility(child_item, set_visibility_to);
+        }
     }
 }
 
