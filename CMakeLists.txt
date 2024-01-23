@@ -24,10 +24,8 @@ endif ()
 find_package(Qt6 COMPONENTS
         Core Widgets
         REQUIRED)
-find_package(spdlog CONFIG REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
 add_subdirectory(third_party)
-add_subdirectory(common)
 add_subdirectory(editor)
 add_subdirectory(app)

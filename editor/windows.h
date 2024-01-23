@@ -8,7 +8,9 @@
 
 #include <QMainWindow>
 #include <QLabel>
-#include "editor/viewport.h"
+#include <QtNodes/GraphicsView>
+#include "editor/viewport/viewport.h"
+#include "editor/model/data_model.h"
 
 namespace vox {
 class Windows : public QMainWindow {
@@ -17,16 +19,17 @@ public:
 
     void run();
 
-    void resizeEvent(QResizeEvent *event) override;
-
 private:
-    bool viewer_enabled{true};
-    QDockWidget* stage_tree_dock_widget{};
-    QLabel* l_status{};
+    DataModel model;
 
-    vox::Viewport viewport;
+    QDockWidget *stage_tree_dock_widget{};
+    QLabel *l_status{};
 
-    void initUI();
-    void initMenuBar();
+    vox::Viewport *viewport{};
+
+    void _loadStylesheet();
+    void _initUI();
+    void _initMenuBar();
+    QtNodes::GraphicsView *_create_node_graph();
 };
 }// namespace vox

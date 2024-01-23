@@ -6,8 +6,8 @@
 
 #pragma once
 
-#include <QuartzCore/QuartzCore.hpp>
-#include <Metal/Metal.hpp>
+#include "third_party/metal-cpp/QuartzCore/QuartzCore.hpp"
+#include "third_party/metal-cpp/Metal/Metal.hpp"
 #include <string_view>
 
 extern "C" CA::MetalLayer *metal_backend_create_layer(

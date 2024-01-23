@@ -15,10 +15,10 @@ RootDataModel::RootDataModel()
       _xformCache{_currentFrame} {
 }
 
-std::optional<pxr::UsdStageRefPtr> &RootDataModel::stage() {
+pxr::UsdStageRefPtr &RootDataModel::stage() {
     return _stage;
 }
-void RootDataModel::setStage(std::optional<pxr::UsdStageRefPtr> &value) {
+void RootDataModel::setStage(pxr::UsdStageRefPtr value) {
     if (value != _stage) {
         if (_pcListener) {
             pxr::TfNotice::Revoke(_pcListener.value());
@@ -30,7 +30,7 @@ void RootDataModel::setStage(std::optional<pxr::UsdStageRefPtr> &value) {
         if (_stage) {
             _pcListener = pxr::TfNotice::Register(pxr::TfCreateWeakPtr(this),
                                                   &RootDataModel::_onPrimsChanged,
-                                                  _stage.value());
+                                                  _stage);
         }
         emit signalStageReplaced();
     }

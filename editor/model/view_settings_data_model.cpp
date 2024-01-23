@@ -32,8 +32,7 @@ const std::string &OCIOSettings::colorSpace() {
 }
 
 ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel)
-    : QObject(this),
-      _rootDataModel{rootDataModel} {
+    : _rootDataModel{rootDataModel} {
     _cameraMaskColor = {0.1, 0.1, 0.1, 1.0};
     _cameraReticlesColor = {0.0, 0.7, 1.0, 1.0};
     _defaultMaterialAmbient = DEFAULT_AMBIENT;
@@ -627,8 +626,8 @@ void ViewSettingsDataModel::setCameraPath(std::optional<pxr::SdfPath> value) {
 }
 
 std::optional<pxr::UsdPrim> ViewSettingsDataModel::cameraPrim() {
-    if (cameraPath().has_value() && _rootDataModel.stage().has_value()) {
-        return _rootDataModel.stage().value()->GetPrimAtPath(cameraPath().value());
+    if (cameraPath().has_value() && _rootDataModel.stage() != nullptr) {
+        return _rootDataModel.stage()->GetPrimAtPath(cameraPath().value());
     } else {
         return std::nullopt;
     }

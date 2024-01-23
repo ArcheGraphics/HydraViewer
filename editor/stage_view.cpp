@@ -10,11 +10,11 @@
 #include <pxr/base/gf/frustum.h>
 #include <pxr/base/gf/range3d.h>
 #include <pxr/imaging/cameraUtil/conformWindow.h>
+#include <pxr/usd/usdGeom/metrics.h>
+#include <pxr/usd/usdGeom/camera.h>
 #include <QtWidgets/QApplication>
 #include <QWheelEvent>
 #include <utility>
-#include <pxr/usd/usdGeom/metrics.h>
-#include <pxr/usd/usdGeom/camera.h>
 
 namespace vox {
 namespace {
@@ -289,7 +289,7 @@ bool StageView::IsStopRendererSupported() {
 
 void StageView::_stageReplaced() {
     if (_dataModel.stage()) {
-        _stageIsZup = (pxr::UsdGeomGetStageUpAxis(*_dataModel.stage()) == pxr::UsdGeomTokens->z);
+        _stageIsZup = (pxr::UsdGeomGetStageUpAxis(_dataModel.stage()) == pxr::UsdGeomTokens->z);
         _dataModel.viewSettings().setFreeCamera(_createNewFreeCamera(_dataModel.viewSettings(), _stageIsZup));
     }
 }
@@ -434,7 +434,7 @@ void StageView::updateSelection() {
 
     renderer->ClearSelected();
 
-    auto psuRoot = _dataModel.stage().value()->GetPseudoRoot();
+    auto psuRoot = _dataModel.stage()->GetPseudoRoot();
     auto allInstances = _dataModel.selection().getPrimInstances();
     for (auto &prim : _dataModel.selection().getLCDPrims()) {
         if (prim == psuRoot) {
@@ -466,7 +466,7 @@ bool StageView::_isInfiniteBBox(pxr::GfBBox3d bbox) {
 }
 
 pxr::GfBBox3d StageView::getStageBBox() {
-    auto bbox = _dataModel.computeWorldBound(_dataModel.stage().value()->GetPseudoRoot());
+    auto bbox = _dataModel.computeWorldBound(_dataModel.stage()->GetPseudoRoot());
     if (bbox.GetRange().IsEmpty() || _isInfiniteBBox(bbox)) {
         bbox = _getEmptyBBox();
     }
@@ -521,7 +521,7 @@ void StageView::renderSinglePass(pxr::UsdImagingGLDrawMode renderMode, bool rend
         _renderParams.ocioView = pxr::TfToken(_dataModel.viewSettings().ocioSettings().view());
         _renderParams.ocioColorSpace = pxr::TfToken(_dataModel.viewSettings().ocioSettings().colorSpace());
     }
-    auto pseudoRoot = _dataModel.stage().value()->GetPseudoRoot();
+    auto pseudoRoot = _dataModel.stage()->GetPseudoRoot();
 
     renderer->SetSelectionColor(_dataModel.viewSettings().highlightColor());
     renderer->SetRendererSetting(
@@ -844,7 +844,7 @@ std::optional<StageView::PickResult> StageView::pick(const pxr::GfFrustum &pickF
     auto result = renderer->TestIntersection(
         pickFrustum.ComputeViewMatrix(),
         pickFrustum.ComputeProjectionMatrix(),
-        _dataModel.stage().value()->GetPseudoRoot(), _renderParams,
+        _dataModel.stage()->GetPseudoRoot(), _renderParams,
         &pickResult.outHitPoint, &pickResult.outHitNormal, &pickResult.outHitPrimPath,
         &pickResult.outHitInstancerPath, &pickResult.outHitInstanceIndex, &pickResult.outInstancerContext);
     if (result) {
@@ -964,7 +964,7 @@ void StageView::ExportSession(const std::string &stagePath, const std::string &d
                               std::optional<int> w, std::optional<int> h) {
     auto tmpStage = pxr::UsdStage::CreateNew(stagePath);
     if (_dataModel.stage()) {
-        tmpStage->GetRootLayer()->TransferContent(_dataModel.stage().value()->GetSessionLayer());
+        tmpStage->GetRootLayer()->TransferContent(_dataModel.stage()->GetSessionLayer());
     }
     if (!cameraPrim()) {
         // Export the free camera if it's the currently-visible camera
@@ -976,7 +976,7 @@ void StageView::ExportSession(const std::string &stagePath, const std::string &d
     // incurring Usd composition cost.
     if (_dataModel.stage()) {
         auto sdfLayer = pxr::SdfLayer::FindOrOpen(stagePath);
-        sdfLayer->GetSubLayerPaths().push_back(_dataModel.stage().value()->GetRootLayer()->GetRealPath());
+        sdfLayer->GetSubLayerPaths().push_back(_dataModel.stage()->GetRootLayer()->GetRealPath());
         sdfLayer->Save();
     }
 }

@@ -8,7 +8,7 @@
 
 #include <string>
 #include <utility>
-#include "model/root_data_model.h"
+#include "../model/root_data_model.h"
 
 /// Names of all available computed properties.
 struct ComputedPropertyNames {

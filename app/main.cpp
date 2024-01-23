@@ -5,7 +5,7 @@
 //  property of any third parties.
 
 #include <QApplication>
-#include "windows.h"
+#include "editor/windows.h"
 
 int main(int argc, char *argv[]) {
     QApplication app{argc, argv};

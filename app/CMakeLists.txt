@@ -9,8 +9,6 @@ project(HydraViewer)
 
 add_executable(${PROJECT_NAME}
         main.cpp
-        windows.cpp
-        windows.h
 )
 
 target_include_directories(${PROJECT_NAME} PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ../)
@@ -26,7 +24,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::Widgets
         fmt::fmt
         metal-cpp
-        common
+        QtNodes
         editor
         ${PXR_LIBRARY_NAMES}
 )

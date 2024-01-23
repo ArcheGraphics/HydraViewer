@@ -161,13 +161,13 @@ void SelectionDataModel::setPrim(const pxr::UsdPrim &prim, int instance) {
 }
 
 pxr::UsdPrim SelectionDataModel::getFocusPrim() {
-    return _rootDataModel.stage().value()->GetPrimAtPath(getFocusPrimPath());
+    return _rootDataModel.stage()->GetPrimAtPath(getFocusPrimPath());
 }
 
 std::vector<pxr::UsdPrim> SelectionDataModel::getPrims() {
     std::vector<pxr::UsdPrim> prims;
     for (const auto &path : getPrimPaths()) {
-        prims.push_back(_rootDataModel.stage().value()->GetPrimAtPath(path));
+        prims.push_back(_rootDataModel.stage()->GetPrimAtPath(path));
     }
 
     return prims;
@@ -176,7 +176,7 @@ std::vector<pxr::UsdPrim> SelectionDataModel::getPrims() {
 std::vector<pxr::UsdPrim> SelectionDataModel::getLCDPrims() {
     std::vector<pxr::UsdPrim> prims;
     for (const auto &path : getLCDPaths()) {
-        prims.push_back(_rootDataModel.stage().value()->GetPrimAtPath(path));
+        prims.push_back(_rootDataModel.stage()->GetPrimAtPath(path));
     }
 
     return prims;
@@ -185,7 +185,7 @@ std::vector<pxr::UsdPrim> SelectionDataModel::getLCDPrims() {
 std::map<pxr::UsdPrim, std::set<int>> SelectionDataModel::getPrimInstances() {
     std::map<pxr::UsdPrim, std::set<int>> map;
     for (auto &[path, instances] : getPrimPathInstances()) {
-        auto prim = _rootDataModel.stage().value()->GetPrimAtPath(path);
+        auto prim = _rootDataModel.stage()->GetPrimAtPath(path);
         map.insert(std::make_pair(prim, instances));
     }
     return map;
@@ -224,7 +224,7 @@ void SelectionDataModel::removeUndefinedPrims() {
 }
 
 void SelectionDataModel::removeUnpopulatedPrims() {
-    auto stage = _rootDataModel.stage().value();
+    auto stage = _rootDataModel.stage();
     _primSelection.removeMatchingPaths([stage](const pxr::SdfPath &path) -> bool {
         return !stage->GetPrimAtPath(path);
     });
@@ -437,7 +437,7 @@ void SelectionDataModel::_ensureValidTargetPath(const pxr::SdfPath &path) {
 }
 
 pxr::UsdProperty SelectionDataModel::_getPropFromPath(const pxr::SdfPath &path) {
-    auto prim = _rootDataModel.stage().value()->GetPrimAtPath(path.GetPrimPath());
+    auto prim = _rootDataModel.stage()->GetPrimAtPath(path.GetPrimPath());
     return prim.GetProperty(path.GetNameToken());
 }
 
@@ -445,7 +445,7 @@ pxr::UsdPrim SelectionDataModel::_getTargetFromPath(const pxr::SdfPath &path) {
     //    if (path.IsPropertyPath()) {
     //        return _getPropFromPath(path);
     //    } else {
-    return _rootDataModel.stage().value()->GetPrimAtPath(path);
+    return _rootDataModel.stage()->GetPrimAtPath(path);
     //    }
 }
 
@@ -454,7 +454,7 @@ void SelectionDataModel::_requireNotBatchingPrims() {}
 void SelectionDataModel::_requireNotBatchingProps() {}
 
 std::shared_ptr<CustomAttribute> SelectionDataModel::_getComputedPropFromPath(const pxr::SdfPath &primPath, const std::string &propName) {
-    auto prim = _rootDataModel.stage().value()->GetPrimAtPath(primPath);
+    auto prim = _rootDataModel.stage()->GetPrimAtPath(primPath);
     return _computedPropFactory.getComputedProperty(prim, propName);
 }
 

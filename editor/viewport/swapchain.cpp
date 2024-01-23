@@ -5,8 +5,8 @@
 //  property of any third parties.
 
 #include "swapchain.h"
-#include "common/logging.h"
-#include "common/filesystem.h"
+#include <fmt/format.h>
+#include <QDebug>
 
 namespace vox {
 Swapchain::Swapchain(MTL::Device *device, uint64_t window_handle,
@@ -39,14 +39,52 @@ Swapchain::~Swapchain() noexcept {
 }
 
 void Swapchain::create_pso(MTL::Device *device) {
-    auto raw_source = fs::read_shader("usd_blit.metal");
-    auto source = NS::String::string(raw_source.c_str(), NS::UTF8StringEncoding);
+    auto raw_source =
+        "#include <metal_stdlib>\n"
+        "using namespace metal;\n"
+        "\n"
+        "struct VertexOut\n"
+        "{\n"
+        "    float4 position [[ position ]];\n"
+        "    float2 texcoord;\n"
+        "};\n"
+        "\n"
+        "vertex VertexOut vtxBlit(uint vid [[vertex_id]])\n"
+        "{\n"
+        "    // These vertices map a triangle to cover a fullscreen quad.\n"
+        "    const float4 vertices[] = {\n"
+        "        float4(-1, -1, 1, 1), // bottom left\n"
+        "        float4(3, -1, 1, 1),  // bottom right\n"
+        "        float4(-1, 3, 1, 1),  // upper left\n"
+        "    };\n"
+        "    \n"
+        "    const float2 texcoords[] = {\n"
+        "        float2(0.0, 0.0), // bottom left\n"
+        "        float2(2.0, 0.0), // bottom right\n"
+        "        float2(0.0, 2.0), // upper left\n"
+        "    };\n"
+        "    \n"
+        "    VertexOut out;\n"
+        "    out.position = vertices[vid];\n"
+        "    out.texcoord = texcoords[vid];\n"
+        "    return out;\n"
+        "}\n"
+        "\n"
+        "fragment half4 fragBlitLinear(VertexOut in [[stage_in]], texture2d<float> tex[[texture(0)]])\n"
+        "{\n"
+        "    constexpr sampler s = sampler(address::clamp_to_edge);\n"
+        "    \n"
+        "    float4 pixel = tex.sample(s, in.texcoord);\n"
+        "    return half4(pixel);\n"
+        "}";
+
+    auto source = NS::String::string(raw_source, NS::UTF8StringEncoding);
     NS::Error *error{nullptr};
     auto option = MTL::CompileOptions::alloc()->init();
     auto defaultLibrary = device->newLibrary(source, option, &error);
     if (error != nullptr) {
-        LOGE("Error: could not load Metal shader library: {}",
-             error->description()->cString(NS::StringEncoding::UTF8StringEncoding))
+        qDebug("Error: could not load Metal shader library: %s",
+               error->description()->cString(NS::StringEncoding::UTF8StringEncoding));
     }
 
     auto functionName = NS::String::string("vtxBlit", NS::UTF8StringEncoding);
@@ -75,7 +113,7 @@ void Swapchain::create_pso(MTL::Device *device) {
     error = nullptr;
     _pipeline = device->newRenderPipelineState(pipelineStateDescriptor, &error);
     if (!_pipeline) {
-        LOGE("Failed to created pipeline state, error {}", error->description()->cString(NS::StringEncoding::UTF8StringEncoding))
+        qDebug("Failed to created pipeline state, error %s", error->description()->cString(NS::StringEncoding::UTF8StringEncoding));
     }
 }
 
@@ -96,7 +134,7 @@ void Swapchain::present(MTL::CommandBuffer *command_buffer, MTL::Texture *image)
         command_buffer->presentDrawable(drawable);
         if (_command_label) { command_buffer->setLabel(_command_label); }
     } else {
-        LOGW("Failed to acquire next drawable from swapchain.");
+        qDebug("Failed to acquire next drawable from swapchain.");
     }
 }
 

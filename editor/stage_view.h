@@ -12,8 +12,7 @@
 #include <pxr/usdImaging/usdImagingGL/engine.h>
 #include <QWidget>
 
-#include "model/selection_data_model.h"
-#include "model/view_settings_data_model.h"
+#include "model/data_model.h"
 
 namespace vox {
 class Rect {
@@ -96,24 +95,6 @@ public:
         Tumble,
         Zoom,
         Pick,
-    };
-
-    struct DefaultDataModel : public RootDataModel {
-        DefaultDataModel()
-            : _selectionDataModel(*this),
-              _viewSettingsDataModel(*this) {}
-
-        inline SelectionDataModel &selection() {
-            return _selectionDataModel;
-        };
-
-        inline ViewSettingsDataModel &viewSettings() {
-            return _viewSettingsDataModel;
-        }
-
-    private:
-        SelectionDataModel _selectionDataModel;
-        ViewSettingsDataModel _viewSettingsDataModel;
     };
 
     [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
@@ -330,7 +311,7 @@ public:
     void _primSelectionChanged();
 
 private:
-    DefaultDataModel _dataModel;
+    DataModel _dataModel;
     bool _isFirstImage{true};
 
     std::optional<pxr::GfCamera> _lastComputedGfCamera{};

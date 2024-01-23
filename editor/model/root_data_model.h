@@ -33,10 +33,10 @@ public:
     RootDataModel();
 
     /// Get the current Usd.Stage object.
-    std::optional<pxr::UsdStageRefPtr> &stage();
+    pxr::UsdStageRefPtr &stage();
     /// Sets the current Usd.Stage object, and emits a signal if it is
     /// different from the previous stage.
-    void setStage(std::optional<pxr::UsdStageRefPtr> &stage);
+    void setStage(pxr::UsdStageRefPtr stage);
 
     /// Get a Usd.TimeCode object which represents the current frame being
     ///   considered in Usdview.
@@ -65,7 +65,7 @@ public:
     static pxr::UsdShadeMaterial computeBoundMaterial(const pxr::UsdPrim &prim, const pxr::TfToken &materialPurpose);
 
 private:
-    std::optional<pxr::UsdStageRefPtr> _stage;
+    pxr::UsdStageRefPtr _stage;
     pxr::UsdTimeCode _currentFrame{};
     bool _playing{false};
     pxr::UsdGeomBBoxCache _bboxCache;

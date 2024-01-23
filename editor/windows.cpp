@@ -6,6 +6,9 @@
 
 #include "windows.h"
 #include "editor/framerate.h"
+#include "editor/stage_tree.h"
+#include "editor/render_settings.h"
+#include "editor/node/graph_model.h"
 #include <QMenuBar>
 #include <QActionGroup>
 #include <fmt/format.h>
@@ -13,34 +16,46 @@
 #include <QStatusBar>
 #include <QDockWidget>
 #include <QApplication>
+#include <QtNodes/BasicGraphicsScene>
+#include <QtNodes/ConnectionStyle>
+#include <QtNodes/StyleCollection>
+#include <fstream>
+#include <regex>
 
 namespace vox {
+namespace {
+std::string read_text_file(const std::string &filename) {
+    std::ifstream file;
+
+    file.open(filename, std::ios::in);
+
+    if (!file.is_open()) {
+        throw std::runtime_error("Failed to open file: " + filename);
+    }
+
+    return std::string{(std::istreambuf_iterator<char>(file)),
+                       (std::istreambuf_iterator<char>())};
+}
+}// namespace
+
 Windows::Windows(int width, int height)
-    : QMainWindow(),
-      viewport{this} {
+    : QMainWindow() {
     resize(width, height);
     setWindowTitle("Editor");
     setAutoFillBackground(true);
 
-    viewport.move(contentsRect().topLeft());
-    viewport.resize(contentsRect().size());
-    viewport.recreateSwapChain(contentsRect().size());
-    viewport.setupScene(pxr::UsdStage::Open("assets/Kitchen_set/Kitchen_set.usd"));
+    _initUI();
+    _initMenuBar();
+    _loadStylesheet();
 
-    // initUI();
-    initMenuBar();
-}
-
-void Windows::resizeEvent(QResizeEvent *event) {
-    QMainWindow::resizeEvent(event);
-    viewport.resizeEvent(event);
+    model.setStage(pxr::UsdStage::Open(fmt::format("{}/{}", PROJECT_PATH, "assets/Kitchen_set/Kitchen_set.usd")));
 }
 
 void Windows::run() {
     show();
     vox::Framerate framerate;
     while (isVisible()) {
-        viewport.draw();
+        viewport->draw();
         QApplication::processEvents();
 
         framerate.record();
@@ -49,62 +64,53 @@ void Windows::run() {
     }
 }
 
-void Windows::initUI() {
-    resize(1600, 900);
+void Windows::_initUI() {
     setObjectName("MainWindow");
     l_status = new QLabel();
     l_status->setStyleSheet("border: 0px;");
     statusBar()->setHidden(false);
     statusBar()->addWidget(l_status);
 
-    setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
-    setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
     setDockOptions(QMainWindow::AllowNestedDocks | QMainWindow::AllowTabbedDocks);
-
     setDockNestingEnabled(true);
 
-    // Stage Tree
+    viewport = new Viewport(this, model);
+    setCentralWidget(viewport);
+    viewport->setFocus();
+
+    // region Tree
     {
-        // stage_tree_widget = get_stage_tree_widget();
+        auto stage_tree_widget = new StageTreeWidget(model, this);
         stage_tree_dock_widget = new QDockWidget();
         stage_tree_dock_widget->setWindowTitle("Scenegraph");
-        // stage_tree_dock_widget->setWidget(stage_tree_widget);
-        stage_tree_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
-        addDockWidget(Qt::TopDockWidgetArea, stage_tree_dock_widget);
-    }
-
-    if (viewer_enabled) {
-        // data_model = StageView.DefaultDataModel();
-        // stage_view = StageView(dataModel = data_model);
-
-        // region Render Settings
-        // render_settings_widget = get_render_settings_widget(stage_view);
-        auto render_settings_dock_widget = new QDockWidget();
-        render_settings_dock_widget->setWindowTitle("Render Settings");
-        // render_settings_dock_widget->setWidget(render_settings_widget);
-        render_settings_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
-        splitDockWidget(stage_tree_dock_widget, render_settings_dock_widget, Qt::Vertical);
-
-        // region Stage View
-        // stage_view_widget = get_stage_view_widget(data_model, stage_view);
-        // stage_view_widget.fileDropped.connect(on_view_file_dropped);
-        auto stage_view_dock_widget = new QDockWidget();
-        stage_view_dock_widget->setWindowTitle("Viewport");
-        // stage_view_dock_widget->setWidget(stage_view_widget);
-        stage_view_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
-        addDockWidget(Qt::TopDockWidgetArea, stage_view_dock_widget);
-
-        // stage_view_widget.rendererChanged.connect(render_settings_widget.on_renderer_changed);
+        stage_tree_dock_widget->setWidget(stage_tree_widget);
+        stage_tree_dock_widget->setAllowedAreas(Qt::LeftDockWidgetArea);
+        stage_tree_dock_widget->setFeatures(QDockWidget::NoDockWidgetFeatures);
+        addDockWidget(Qt::LeftDockWidgetArea, stage_tree_dock_widget);
     }
 
     // region Properties
     {
-        // properties = new PropertiesBinWidget(root_node_graph = qx_node_graph);
+        auto render_settings_widget = new RenderSettingsWidget(viewport);
+        render_settings_widget->onRendererChanged();
         auto properties_dock_widget = new QDockWidget();
         properties_dock_widget->setWindowTitle("Properties");
-        // properties_dock_widget->setWidget(properties);
-        properties_dock_widget->setAllowedAreas(Qt::AllDockWidgetAreas);
+        properties_dock_widget->setWidget(render_settings_widget);
+        properties_dock_widget->setAllowedAreas(Qt::RightDockWidgetArea);
+        properties_dock_widget->setFeatures(QDockWidget::NoDockWidgetFeatures);
         addDockWidget(Qt::RightDockWidgetArea, properties_dock_widget);
+        properties_dock_widget->setMaximumWidth(300);
+    }
+
+    // region node
+    {
+        auto node_view = _create_node_graph();
+        auto node_graph_dock_widget = new QDockWidget();
+        node_graph_dock_widget->setWindowTitle("node graph");
+        node_graph_dock_widget->setWidget(node_view);
+        node_graph_dock_widget->setAllowedAreas(Qt::BottomDockWidgetArea);
+        node_graph_dock_widget->setFeatures(QDockWidget::DockWidgetFloatable);
+        addDockWidget(Qt::BottomDockWidgetArea, node_graph_dock_widget);
     }
 
     // region events
@@ -115,19 +121,14 @@ void Windows::initUI() {
         // qx_node_graph.mx_parameter_changed.connect(stage_ctrl.update_parameter);
         // qx_node_graph.mx_file_loaded.connect(on_mx_file_loaded);
 
-        if (viewer_enabled) {
-            // stage_ctrl.signal_stage_changed.connect(stage_view_widget.set_stage);
-            // stage_ctrl.signal_stage_updated.connect(stage_view_widget.view.updateGL);
-        }
+        // stage_ctrl.signal_stage_changed.connect(stage_view_widget.set_stage);
+        // stage_ctrl.signal_stage_updated.connect(stage_view_widget.view.updateGL);
         // stage_ctrl.signal_stage_changed.connect(stage_tree_widget.set_stage);
         // stage_ctrl.signal_stage_updated.connect(stage_tree_widget.refresh_tree);
     }
-
-    // setCentralWidget(qx_node_graph_widget);
-    // qx_node_graph_widget.setFocus();
 }
 
-void Windows::initMenuBar() {
+void Windows::_initMenuBar() {
     auto file_menu = menuBar()->addMenu("&File");
     auto options_menu = menuBar()->addMenu("&Options");
     auto view_menu = menuBar()->addMenu("&View");
@@ -209,22 +210,21 @@ void Windows::initMenuBar() {
     }
 
     {
-        if (viewer_enabled) {
-            auto menu_set_current_renderer = new QMenu("&Set Renderer", this);
-            // auto grp_set_current_renderer = new QActionGroup(this, true);
-            // grp_set_current_renderer.triggered.connect(
-            //     lambda action : stage_view_widget.set_current_renderer_by_name(action.text()));
-            // menu_set_current_renderer->aboutToShow.connect(on_set_renderer_menu_showing);
-            view_menu->addMenu(menu_set_current_renderer);
+        auto menu_set_current_renderer = new QMenu("&Set Renderer", this);
+        // auto grp_set_current_renderer = new QActionGroup(this, true);
+        // grp_set_current_renderer.triggered.connect(
+        //     lambda action : stage_view_widget.set_current_renderer_by_name(action.text()));
+        // menu_set_current_renderer->aboutToShow.connect(on_set_renderer_menu_showing);
+        view_menu->addMenu(menu_set_current_renderer);
 
-            auto act_hdri = new QAction("Enable HDRI", this);
-            act_hdri->setCheckable(true);
-            act_hdri->setChecked(true);
-            // act_hdri.toggled.connect(stage_view_widget.set_hdri_enabled);
-            // act_hdri.toggled.connect(lambda x : stage_tree_widget.refresh_tree());
-            view_menu->addAction(act_hdri);
-            view_menu->addSeparator();
-        }
+        auto act_hdri = new QAction("Enable HDRI", this);
+        act_hdri->setCheckable(true);
+        act_hdri->setChecked(true);
+        // act_hdri.toggled.connect(stage_view_widget.set_hdri_enabled);
+        // act_hdri.toggled.connect(lambda x : stage_tree_widget.refresh_tree());
+        view_menu->addAction(act_hdri);
+        view_menu->addSeparator();
+
         // view_menu.aboutToShow.connect(on_view_menu_showing);
         auto act_prop = new QAction("Properties", this);
         act_prop->setCheckable(true);
@@ -244,9 +244,7 @@ void Windows::initMenuBar() {
         auto act_viewport = new QAction("Viewport", this);
         act_viewport->setCheckable(true);
         // act_viewport.toggled.connect(on_viewport_toggled);
-        if (viewer_enabled) {
-            view_menu->addAction(act_viewport);
-        }
+        view_menu->addAction(act_viewport);
     }
 
     {
@@ -283,4 +281,31 @@ void Windows::initMenuBar() {
         help_menu->addAction(about_action);
     }
 }
+
+void Windows::_loadStylesheet() {
+    auto qss = read_text_file(fmt::format("{}/{}", PROJECT_PATH, "editor/style.qss"));
+    std::regex regexPattern("resource_path");
+    qss = std::regex_replace(qss, regexPattern, fmt::format("{}/{}", PROJECT_PATH, "editor"));
+    setStyleSheet(QString(qss.c_str()));
+}
+
+QtNodes::GraphicsView *Windows::_create_node_graph() {
+    auto scene = new QtNodes::BasicGraphicsScene(model.graphModel());
+    auto view = new QtNodes::GraphicsView(scene);
+    view->setSceneRect(QRect(0, 0, 20, 200));
+
+    // Setup context menu for creating new nodes.
+    view->setContextMenuPolicy(Qt::ActionsContextMenu);
+    auto createNodeAction = new QAction(QStringLiteral("Create Node"), view);
+    QObject::connect(createNodeAction, &QAction::triggered, [=]() {
+        // Mouse position in scene coordinates.
+        QPointF posView = view->mapToScene(view->mapFromGlobal(QCursor::pos()));
+
+        NodeId const newId = model.graphModel().addNode();
+        model.graphModel().setNodeData(newId, NodeRole::Position, posView);
+    });
+    view->insertAction(view->actions().front(), createNodeAction);
+    return view;
+}
+
 }// namespace vox

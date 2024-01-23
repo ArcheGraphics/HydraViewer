@@ -22,15 +22,11 @@ target_link_libraries(metal-cpp
         "-framework QuartzCore"
         )
 
-## googletest
-#add_subdirectory(googletest)
-#
-## google bechmark
-#set(BENCHMARK_ENABLE_TESTING OFF CACHE BOOL "" FORCE)
-#set(BENCHMARK_ENABLE_INSTALL OFF CACHE BOOL "" FORCE)
-#add_subdirectory(benchmark EXCLUDE_FROM_ALL)
-#
-## imgui
+# node editor
+add_subdirectory(nodeeditor)
+
+
+# imgui
 #set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
 #set(IMGUI_FILES
 #        "${IMGUI_DIR}/imgui.cpp"

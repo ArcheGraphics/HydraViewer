@@ -18,48 +18,46 @@
 #import <QWidget>
 
 #include "swapchain.h"
+#include "camera.h"
+#include "../model/data_model.h"
 
 namespace vox {
-class Camera;
 class Viewport : public QWidget {
 public:
-    explicit Viewport(QWidget *parent);
-    ~Viewport() override;
+    explicit Viewport(QWidget *parent, DataModel &model);
 
     [[nodiscard]] QPaintEngine *paintEngine() const override { return nullptr; }
 
+    /// Draw the scene, and blit the result to the view.
+    /// Returns false if the engine wasn't initialized.
     void draw();
-
-    /// Increases a counter that the draw method uses to determine if a frame needs to be rendered.
-    void requestFrame();
-
-    /// Loads the scene from the provided URL and prepares the camera.
-    void setupScene(const pxr::UsdStageRefPtr &stage);
-
-    [[nodiscard]] bool isZUp() const { return _isZUp; }
-
-    Camera *viewCamera() { return _viewCamera.get(); }
 
     void recreateSwapChain(QSize size);
 
     void resizeEvent(QResizeEvent *event) override;
 
+    pxr::UsdImagingGLRendererSettingsList rendererSettingLists();
+
+    pxr::VtValue rendererSetting(pxr::TfToken const &id);
+
+    void setRendererSetting(pxr::TfToken const &id, pxr::VtValue const &value);
+
 private:
-    /// Sets an initial material for the scene.
-    void initializeMaterial();
-
-    /// Requests the bounding box cache from Hydra.
-    pxr::UsdGeomBBoxCache computeBboxCache();
-
     /// Initializes the Storm engine.
     void initializeEngine();
+
+    /// Updates the animation timing variables.
+    double updateTime();
 
     /// Draws the scene using Hydra.
     pxr::HgiTextureHandle drawWithHydra(double timeCode, CGSize viewSize);
 
-    /// Draw the scene, and blit the result to the view.
-    /// Returns false if the engine wasn't initialized.
-    bool drawMainView(double timeCode);
+private:
+    /// Loads the scene from the provided URL and prepares the camera.
+    void setupScene();
+
+    /// Requests the bounding box cache from Hydra.
+    pxr::UsdGeomBBoxCache computeBboxCache();
 
     /// Determine the size of the world so the camera will frame its entire bounding box.
     void calculateWorldCenterAndSize();
@@ -70,30 +68,21 @@ private:
     /// Gets important information about the scene, such as frames per second and if the z-axis points up.
     void getSceneInformation();
 
-    /// Updates the animation timing variables.
-    double updateTime();
-
 private:
-    std::unique_ptr<Swapchain> _swapchain{};
-    MTL::Device *_device{};
+    DataModel &_model;
+
     dispatch_semaphore_t _inFlightSemaphore{};
+    pxr::HgiUniquePtr _hgi;
+    std::unique_ptr<pxr::UsdImagingGLEngine> _engine;
+    std::unique_ptr<Swapchain> _swapchain{};
 
     double _startTimeInSeconds{};
     double _timeCodesPerSecond{};
     double _startTimeCode{};
     double _endTimeCode{};
+
     pxr::GfVec3d _worldCenter{};
     double _worldSize{};
-    int32_t _requestedFrames{};
-    bool _sceneSetup{};
-
-    pxr::GlfSimpleMaterial _material;
-    pxr::GfVec4f _sceneAmbient{};
-
-    pxr::HgiUniquePtr _hgi;
-    std::shared_ptr<pxr::UsdImagingGLEngine> _engine;
-    pxr::UsdStageRefPtr _stage;
-
     bool _isZUp{};
     std::unique_ptr<Camera> _viewCamera;
 };

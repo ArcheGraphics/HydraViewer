@@ -4,14 +4,10 @@
 //  personal capacity and am not conveying any rights to any intellectual
 //  property of any third parties.
 
-#include "logging.h"
+#include "data_model.h"
 
-Logger &get_null_logger() {
-    static Logger logger(Logger::Type::NONE);
-    return logger;
-}
-
-Logger &get_error_logger() {
-    static Logger logger(Logger::Type::ERROR);
-    return logger;
-}
+namespace vox {
+DataModel::DataModel()
+    : _selectionDataModel(*this),
+      _viewSettingsDataModel(*this) {}
+}// namespace vox

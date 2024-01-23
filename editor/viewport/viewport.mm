@@ -6,8 +6,6 @@
 
 #include "viewport.h"
 #include "camera.h"
-#include "common/logging.h"
-#include "common/filesystem.h"
 
 #include <pxr/pxr.h>
 #include <pxr/base/gf/camera.h>
@@ -22,10 +20,6 @@
 #include <pxr/imaging/hgiMetal/texture.h>
 #include <MetalKit/MetalKit.h>
 #import <CoreImage/CIContext.h>
-
-#include <spdlog/async_logger.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/spdlog.h>
 
 #include <cmath>
 #include <memory>
@@ -131,19 +125,30 @@ GfFrustum computeFrustum(const GfMatrix4d &cameraTransform,
 }
 }// namespace
 
-/// Sets an initial material for the scene.
-void Viewport::initializeMaterial() {
-    float kA = 0.2f;
-    float kS = 0.1f;
-    _material.SetAmbient(GfVec4f(kA, kA, kA, 1.0f));
-    _material.SetSpecular(GfVec4f(kS, kS, kS, 1.0f));
-    _material.SetShininess(32.0);
+/// Loads the scene from the provided URL and prepares the camera.
+void Viewport::setupScene() {
+    // Get scene information.
+    getSceneInformation();
 
-    _sceneAmbient = GfVec4f(0.01f, 0.01f, 0.01f, 1.0f);
+    // Set up the initial scene camera based on the loaded stage.
+    setupCamera();
+}
+
+/// Gets important information about the scene, such as frames per second and if the z-axis points up.
+void Viewport::getSceneInformation() {
+    auto stage = _model.stage();
+    _timeCodesPerSecond = stage->GetFramesPerSecond();
+    if (stage->HasAuthoredTimeCodeRange()) {
+        _startTimeCode = stage->GetStartTimeCode();
+        _endTimeCode = stage->GetEndTimeCode();
+    }
+    _isZUp = (UsdGeomGetStageUpAxis(stage) == UsdGeomTokens->z);
 }
 
 /// Requests the bounding box cache from Hydra.
 pxr::UsdGeomBBoxCache Viewport::computeBboxCache() {
+    auto stage = _model.stage();
+
     TfTokenVector purposes;
     purposes.push_back(UsdGeomTokens->default_);
     purposes.push_back(UsdGeomTokens->proxy);
@@ -153,114 +158,18 @@ pxr::UsdGeomBBoxCache Viewport::computeBboxCache() {
     // there's no bound on the first frame.
     bool useExtentHints = true;
     UsdTimeCode timeCode = UsdTimeCode::Default();
-    if (_stage->HasAuthoredTimeCodeRange()) {
-        timeCode = _stage->GetStartTimeCode();
+    if (stage->HasAuthoredTimeCodeRange()) {
+        timeCode = stage->GetStartTimeCode();
     }
     UsdGeomBBoxCache bboxCache(timeCode, purposes, useExtentHints);
     return bboxCache;
-}
-
-/// Initializes the Storm engine.
-void Viewport::initializeEngine() {
-    _inFlightSemaphore = dispatch_semaphore_create(AAPLMaxBuffersInFlight);
-
-    SdfPathVector excludedPaths;
-    _hgi = Hgi::CreatePlatformDefaultHgi();
-    HdDriver driver{HgiTokens->renderDriver, VtValue(_hgi.get())};
-
-    _engine = std::make_shared<pxr::UsdImagingGLEngine>(driver);
-
-    _engine->SetEnablePresentation(false);
-    _engine->SetRendererAov(HdAovTokens->color);
-}
-
-/// Draws the scene using Hydra.
-pxr::HgiTextureHandle Viewport::drawWithHydra(double timeCode, CGSize viewSize) {
-    // Camera projection setup.
-    GfMatrix4d cameraTransform = _viewCamera->getTransform();
-    CameraParams cameraParams = _viewCamera->getShaderParams();
-    GfFrustum frustum = computeFrustum(cameraTransform, viewSize, cameraParams);
-    GfMatrix4d modelViewMatrix = frustum.ComputeViewMatrix();
-    GfMatrix4d projMatrix = frustum.ComputeProjectionMatrix();
-    _engine->SetCameraState(modelViewMatrix, projMatrix);
-
-    // Viewport setup.
-    GfVec4d viewport(0, 0, viewSize.width, viewSize.height);
-    _engine->SetRenderViewport(viewport);
-    _engine->SetWindowPolicy(CameraUtilMatchVertically);
-
-    // Light and material setup.
-    GlfSimpleLightVector lights = computeLights(cameraTransform);
-    _engine->SetLightingState(lights, _material, _sceneAmbient);
-
-    // Nondefault render parameters.
-    UsdImagingGLRenderParams params;
-    params.clearColor = GfVec4f(0.0f, 0.0f, 0.0f, 0.0f);
-    params.colorCorrectionMode = HdxColorCorrectionTokens->sRGB;
-    params.frame = timeCode;
-
-    // Render the frame.
-    TfErrorMark mark;
-    _engine->Render(_stage->GetPseudoRoot(), params);
-    TF_VERIFY(mark.IsClean(), "Errors occurred while rendering!");
-
-    // Return the color output.
-    return _engine->GetAovTexture(HdAovTokens->color);
-}
-
-/// Draw the scene, and blit the result to the view.
-/// Returns false if the engine wasn't initialized.
-bool Viewport::drawMainView(double timeCode) {
-    if (!_engine) {
-        return false;
-    }
-
-    // Start the next frame.
-    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
-    auto *hgi = static_cast<HgiMetal *>(_hgi.get());
-    hgi->StartFrame();
-
-    // Draw the scene using Hydra, and recast the result to a MTLTexture.
-    CGSize viewSize = _swapchain->layer()->drawableSize();
-    HgiTextureHandle hgiTexture = drawWithHydra(timeCode, viewSize);
-    auto texture = static_cast<HgiMetalTexture *>(hgiTexture.Get())->GetTextureId();
-
-    // Create a command buffer to blit the texture to the view.
-    id<MTLCommandBuffer> commandBuffer = hgi->GetPrimaryCommandBuffer();
-    __block dispatch_semaphore_t blockSemaphore = _inFlightSemaphore;
-    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-        dispatch_semaphore_signal(blockSemaphore);
-    }];
-
-    // Copy the rendered texture to the view.
-    _swapchain->present((MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
-
-    // Tell Hydra to commit the command buffer, and complete the work.
-    hgi->CommitPrimaryCommandBuffer();
-    hgi->EndFrame();
-
-    return true;
-}
-
-/// Loads the scene from the provided URL and prepares the camera.
-void Viewport::setupScene(const pxr::UsdStageRefPtr &stage) {
-    // Load USD stage.
-    _stage = stage;
-
-    // Get scene information.
-    getSceneInformation();
-
-    // Set up the initial scene camera based on the loaded stage.
-    setupCamera();
-
-    _sceneSetup = true;
 }
 
 /// Determine the size of the world so the camera will frame its entire bounding box.
 void Viewport::calculateWorldCenterAndSize() {
     UsdGeomBBoxCache bboxCache = computeBboxCache();
 
-    GfBBox3d bbox = bboxCache.ComputeWorldBound(_stage->GetPseudoRoot());
+    GfBBox3d bbox = bboxCache.ComputeWorldBound(_model.stage()->GetPseudoRoot());
 
     // Copy the behavior of usdView.
     // If the bounding box is empty or infinite, set it to a default size.
@@ -278,10 +187,10 @@ void Viewport::calculateWorldCenterAndSize() {
 void Viewport::setupCamera() {
     calculateWorldCenterAndSize();
 
-    std::vector<UsdPrim> sceneCameras = getAllPrimsOfType(_stage, TfType::Find<UsdGeomCamera>());
+    std::vector<UsdPrim> sceneCameras = getAllPrimsOfType(_model.stage(), TfType::Find<UsdGeomCamera>());
 
     if (sceneCameras.empty()) {
-        _viewCamera = std::make_unique<Camera>(this);
+        _viewCamera = std::make_unique<Camera>(_isZUp);
         _viewCamera->setRotation({0.0, 0.0, 0.0});
         _viewCamera->setFocus(_worldCenter);
         _viewCamera->setDistance(_worldSize);
@@ -298,18 +207,49 @@ void Viewport::setupCamera() {
         UsdPrim sceneCamera = sceneCameras[0];
         UsdGeomCamera geomCamera = UsdGeomCamera(sceneCamera);
         GfCamera camera = geomCamera.GetCamera(_startTimeCode);
-        _viewCamera = std::make_unique<Camera>(camera, this);
+        _viewCamera = std::make_unique<Camera>(camera, _isZUp);
     }
 }
 
-/// Gets important information about the scene, such as frames per second and if the z-axis points up.
-void Viewport::getSceneInformation() {
-    _timeCodesPerSecond = _stage->GetFramesPerSecond();
-    if (_stage->HasAuthoredTimeCodeRange()) {
-        _startTimeCode = _stage->GetStartTimeCode();
-        _endTimeCode = _stage->GetEndTimeCode();
-    }
-    _isZUp = (UsdGeomGetStageUpAxis(_stage) == UsdGeomTokens->z);
+//----------------------------------------------------------------------------------------------------------------------
+Viewport::Viewport(QWidget *parent, DataModel &model)
+    : QWidget{parent}, _model{model} {
+    setAttribute(Qt::WA_NativeWindow);
+    setAttribute(Qt::WA_PaintOnScreen);
+    setAttribute(Qt::WA_OpaquePaintEvent);
+    setAttribute(Qt::WA_NoSystemBackground);
+    setAttribute(Qt::WA_DontCreateNativeAncestors);
+    setAutoFillBackground(true);
+
+    initializeEngine();
+    auto size = parent->contentsRect().size();
+    _swapchain = std::make_unique<Swapchain>((MTL::Device *)static_cast<HgiMetal *>(_hgi.get())->GetPrimaryDevice(),
+                                             winId(), size.width(), size.height());
+
+    _startTimeInSeconds = 0;
+
+    connect(&_model, &DataModel::signalStageReplaced, this, &Viewport::setupScene);
+}
+
+/// Initializes the Storm engine.
+void Viewport::initializeEngine() {
+    _inFlightSemaphore = dispatch_semaphore_create(AAPLMaxBuffersInFlight);
+
+    _hgi = Hgi::CreatePlatformDefaultHgi();
+    HdDriver driver{HgiTokens->renderDriver, VtValue(_hgi.get())};
+
+    _engine = std::make_unique<pxr::UsdImagingGLEngine>(driver);
+    _engine->SetEnablePresentation(false);
+    _engine->SetRendererAov(HdAovTokens->color);
+}
+
+void Viewport::recreateSwapChain(QSize size) {
+    _swapchain->resize(size.width(), size.height());
+}
+
+void Viewport::resizeEvent(QResizeEvent *event) {
+    resize(event->size());
+    recreateSwapChain(event->size());
 }
 
 /// Updates the animation timing variables.
@@ -334,89 +274,89 @@ double Viewport::updateTime() {
     return timeCode;
 }
 
+/// Draw the scene, and blit the result to the view.
+/// Returns false if the engine wasn't initialized.
 void Viewport::draw() {
-    // There's nothing to render until the scene is set up.
-    if (!_sceneSetup) {
-        return;
-    }
-
-    // There's nothing to render if there isn't a frame requested or the stage isn't animated.
-    if (_requestedFrames == 0 && _startTimeCode == _endTimeCode) {
-        return;
-    }
-
-    // Set up the engine the first time you attempt to render the stage.
-    if (!_engine) {
-        // Initialize the Storm render engine.
-        initializeEngine();
-    }
-
     double timeCode = updateTime();
 
-    bool drawSucceeded = drawMainView(timeCode);
+    // Start the next frame.
+    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
+    auto *hgi = static_cast<HgiMetal *>(_hgi.get());
+    hgi->StartFrame();
 
-    if (drawSucceeded) {
-        _requestedFrames--;
+    // Draw the scene using Hydra, and recast the result to a MTLTexture.
+    CGSize viewSize = _swapchain->layer()->drawableSize();
+    HgiTextureHandle hgiTexture = drawWithHydra(timeCode, viewSize);
+    auto texture = static_cast<HgiMetalTexture *>(hgiTexture.Get())->GetTextureId();
+
+    // Create a command buffer to blit the texture to the view.
+    id<MTLCommandBuffer> commandBuffer = hgi->GetPrimaryCommandBuffer();
+    __block dispatch_semaphore_t blockSemaphore = _inFlightSemaphore;
+    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+        dispatch_semaphore_signal(blockSemaphore);
+    }];
+
+    // Copy the rendered texture to the view.
+    _swapchain->present((MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
+
+    // Tell Hydra to commit the command buffer, and complete the work.
+    hgi->CommitPrimaryCommandBuffer();
+    hgi->EndFrame();
+}
+
+/// Draws the scene using Hydra.
+pxr::HgiTextureHandle Viewport::drawWithHydra(double timeCode, CGSize viewSize) {
+    // Camera projection setup.
+    GfMatrix4d cameraTransform = _viewCamera->getTransform();
+    CameraParams cameraParams = _viewCamera->getShaderParams();
+    GfFrustum frustum = computeFrustum(cameraTransform, viewSize, cameraParams);
+    GfMatrix4d modelViewMatrix = frustum.ComputeViewMatrix();
+    GfMatrix4d projMatrix = frustum.ComputeProjectionMatrix();
+    _engine->SetCameraState(modelViewMatrix, projMatrix);
+
+    // Viewport setup.
+    GfVec4d viewport(0, 0, viewSize.width, viewSize.height);
+    _engine->SetRenderViewport(viewport);
+    _engine->SetWindowPolicy(CameraUtilMatchVertically);
+
+    // Light and material setup.
+    {
+        GlfSimpleLightVector lights = computeLights(cameraTransform);
+        float kA = 0.2f;
+        float kS = 0.1f;
+        pxr::GlfSimpleMaterial light_mat;
+        light_mat.SetAmbient(GfVec4f(kA, kA, kA, 1.0f));
+        light_mat.SetSpecular(GfVec4f(kS, kS, kS, 1.0f));
+        light_mat.SetShininess(32.0);
+        pxr::GfVec4f sceneAmbient = GfVec4f(0.01f, 0.01f, 0.01f, 1.0f);
+        _engine->SetLightingState(lights, light_mat, sceneAmbient);
     }
+
+    // Nondefault render parameters.
+    UsdImagingGLRenderParams params;
+    params.clearColor = GfVec4f(0.0f, 0.0f, 0.0f, 0.0f);
+    params.colorCorrectionMode = HdxColorCorrectionTokens->sRGB;
+    params.frame = timeCode;
+
+    // Render the frame.
+    TfErrorMark mark;
+    _engine->Render(_model.stage()->GetPseudoRoot(), params);
+    TF_VERIFY(mark.IsClean(), "Errors occurred while rendering!");
+
+    // Return the color output.
+    return _engine->GetAovTexture(HdAovTokens->color);
 }
 
-/// Increases a counter that the draw method uses to determine if a frame needs to be rendered.
-void Viewport::requestFrame() {
-    _requestedFrames++;
+pxr::UsdImagingGLRendererSettingsList Viewport::rendererSettingLists() {
+    return _engine->GetRendererSettingsList();
 }
 
-void Viewport::recreateSwapChain(QSize size) {
-    if (!_swapchain) {
-        _swapchain = std::make_unique<Swapchain>(_device, winId(), size.width(), size.height());
-    }
-    _swapchain->resize(size.width(), size.height());
-    requestFrame();
+pxr::VtValue Viewport::rendererSetting(pxr::TfToken const &id) {
+    return _engine->GetRendererSetting(id);
 }
 
-void Viewport::resizeEvent(QResizeEvent *event) {
-    resize(event->size());
-    recreateSwapChain(event->size());
-}
-
-Viewport::Viewport(QWidget *parent)
-    : QWidget{parent} {
-    setAttribute(Qt::WA_NativeWindow);
-    setAttribute(Qt::WA_PaintOnScreen);
-    setAttribute(Qt::WA_OpaquePaintEvent);
-    setAttribute(Qt::WA_NoSystemBackground);
-    setAttribute(Qt::WA_DontCreateNativeAncestors);
-    setAutoFillBackground(true);
-
-    _device = MTL::CreateSystemDefaultDevice();
-    _requestedFrames = 1;
-    _startTimeInSeconds = 0;
-    _sceneSetup = false;
-
-    initializeMaterial();
-
-    // setup logger
-    std::vector<spdlog::sink_ptr> sinks;
-    sinks.push_back(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
-
-    auto logger = std::make_shared<spdlog::logger>("logger", sinks.begin(), sinks.end());
-
-#ifdef METAL_DEBUG
-    logger->set_level(spdlog::level::debug);
-#else
-    logger->set_level(spdlog::level::info);
-#endif
-
-    logger->set_pattern(LOGGER_FORMAT);
-    spdlog::set_default_logger(logger);
-}
-
-Viewport::~Viewport() {
-    _device->release();
-    _engine.reset();
-    _stage.Reset();
-    _swapchain.reset();
-
-    spdlog::drop_all();
+void Viewport::setRendererSetting(pxr::TfToken const &id, pxr::VtValue const &value) {
+    _engine->SetRendererSetting(id, value);
 }
 
 }// namespace vox

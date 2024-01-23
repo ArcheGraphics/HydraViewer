@@ -9,18 +9,32 @@ cmake_minimum_required(VERSION 3.16)
 project(editor LANGUAGES C CXX)
 
 set(COMMON_FILES
-        swapchain.h
-        swapchain.cpp
-        swapchain_layer.mm
-        camera.h
-        camera.cpp
-        viewport.h
-        viewport.mm
-        framerate.h
-        framerate.cpp
         common.h
         common.cpp
+        framerate.h
+        framerate.cpp
+        stage_view.h
+        stage_view.cpp
+        stage_tree.h
+        stage_tree.cpp
+        render_settings.h
+        render_settings.cpp
+        windows.h
+        windows.cpp
+        # node
+        node/graph_model.h
+        node/graph_model.cpp
+        # viewport
+        viewport/swapchain.h
+        viewport/swapchain.cpp
+        viewport/swapchain_layer.mm
+        viewport/camera.h
+        viewport/camera.cpp
+        viewport/viewport.h
+        viewport/viewport.mm
         # model
+        model/data_model.h
+        model/data_model.cpp
         model/root_data_model.h
         model/root_data_model.cpp
         model/selection_data_model.h
@@ -37,8 +51,6 @@ source_group("common\\" FILES ${COMMON_FILES})
 
 set(PROJECT_FILES
         ${COMMON_FILES}
-        stage_view.cpp
-        stage_view.h
 )
 
 add_library(${PROJECT_NAME} OBJECT ${PROJECT_FILES})
@@ -51,7 +63,9 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         Qt::Core
         Qt::Widgets
         fmt::fmt
-        spdlog::spdlog
         metal-cpp
-        common
+        QtNodes
 )
+
+target_compile_definitions(
+        ${PROJECT_NAME} PRIVATE PROJECT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/..")

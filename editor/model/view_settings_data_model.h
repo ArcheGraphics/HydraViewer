@@ -7,7 +7,7 @@
 #pragma once
 
 #include "root_data_model.h"
-#include "common.h"
+#include "../common.h"
 #include "free_camera.h"
 #include <QObject>
 
