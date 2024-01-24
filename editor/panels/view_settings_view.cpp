@@ -13,7 +13,7 @@
 #include <QComboBox>
 
 namespace vox {
-ViewSettingsView::ViewSettingsView(DataModel &model) : _model{model} {
+ViewSettingsWidget::ViewSettingsWidget(DataModel &model) : _model{model} {
     auto layout_root = new QHBoxLayout(this);
     auto scroll_area = new QScrollArea();
     layout_root->addWidget(scroll_area);
@@ -36,11 +36,11 @@ ViewSettingsView::ViewSettingsView(DataModel &model) : _model{model} {
     _link_view_model();
 }
 
-QSize ViewSettingsView::sizeHint() const {
+QSize ViewSettingsWidget::sizeHint() const {
     return {250, 250};
 }
 
-void ViewSettingsView::_link_view_model() {
+void ViewSettingsWidget::_link_view_model() {
     {
         auto row = 0;
         auto label_widget = new QLabel("dome light enabled");

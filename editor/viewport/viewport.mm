@@ -20,6 +20,7 @@
 #include <pxr/imaging/hgiMetal/texture.h>
 #include <imgui.h>
 #include <QResizeEvent>
+#include <fmt/format.h>
 
 using namespace pxr;
 
@@ -199,7 +200,7 @@ void Viewport::draw() {
 void Viewport::drawHUD() {
     ImGui::Begin("Scene Info");
     _framerate.record();
-    ImGui::Text("Display - %f fps", _framerate.report());
+    ImGui::Text("%s", fmt::format("Display - {:.1f} fps", _framerate.report()).c_str());
     ImGui::End();
 }
 

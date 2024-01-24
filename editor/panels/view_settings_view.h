@@ -11,9 +11,9 @@
 #include "model/data_model.h"
 
 namespace vox {
-class ViewSettingsView: public QWidget {
+class ViewSettingsWidget: public QWidget {
 public:
-    explicit ViewSettingsView(DataModel& model);
+    explicit ViewSettingsWidget(DataModel& model);
 
     [[nodiscard]] QSize sizeHint() const override;
 

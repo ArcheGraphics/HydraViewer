@@ -87,7 +87,7 @@ void Windows::_initUI() {
 
     // region Properties
     {
-        auto render_settings_widget = new ViewSettingsView(model);
+        auto render_settings_widget = new ViewSettingsWidget(model);
         auto properties_dock_widget = new QDockWidget();
         properties_dock_widget->setWindowTitle("Properties");
         properties_dock_widget->setWidget(render_settings_widget);
