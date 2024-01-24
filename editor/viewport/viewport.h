@@ -19,6 +19,7 @@
 
 #include "swapchain.h"
 #include "camera.h"
+#include "../framerate.h"
 #include "../model/data_model.h"
 
 namespace vox {
@@ -55,10 +56,12 @@ private:
     void initializeEngine();
 
     /// Updates the animation timing variables.
-    double updateTime();
+    pxr::UsdTimeCode updateTime();
 
     /// Draws the scene using Hydra.
-    pxr::HgiTextureHandle drawWithHydra(double timeCode, CGSize viewSize);
+    pxr::HgiTextureHandle drawWithHydra();
+
+    void drawHUD();
 
 private:
     void mousePressEvent(QMouseEvent *event) override;
@@ -121,6 +124,8 @@ private:
     /// (even temporarily) this widget, supply None as 'stage'.
     void _stageReplaced();
 
+    void _processBBoxes();
+
     struct PickResult {
         pxr::GfVec3d outHitPoint;
         pxr::GfVec3d outHitNormal;
@@ -164,6 +169,7 @@ private:
 
 private:
     DataModel &_model;
+    vox::Framerate _framerate;
 
     dispatch_semaphore_t _inFlightSemaphore{};
     pxr::HgiUniquePtr _hgi;

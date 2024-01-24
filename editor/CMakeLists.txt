@@ -21,6 +21,8 @@ set(COMMON_FILES
         panels/stage_tree.cpp
         panels/render_settings.h
         panels/render_settings.cpp
+        panels/view_settings_view.h
+        panels/view_settings_view.cpp
         # node
         node/graph_model.h
         node/graph_model.cpp
@@ -65,6 +67,7 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
         fmt::fmt
         metal-cpp
         QtNodes
+        imgui
 )
 
 target_compile_definitions(

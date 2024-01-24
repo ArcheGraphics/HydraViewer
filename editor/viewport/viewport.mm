@@ -18,15 +18,7 @@
 #include <pxr/imaging/hgi/blitCmdsOps.h>
 #include <pxr/imaging/hgiMetal/hgi.h>
 #include <pxr/imaging/hgiMetal/texture.h>
-#include <MetalKit/MetalKit.h>
-#import <CoreImage/CIContext.h>
-
-#include <cmath>
-#include <memory>
-#include <mutex>
-#include <string>
-#include <vector>
-
+#include <imgui.h>
 #include <QResizeEvent>
 
 using namespace pxr;
@@ -131,12 +123,21 @@ void Viewport::initializeEngine() {
 
 void Viewport::resizeEvent(QResizeEvent *event) {
     QWidget::resizeEvent(event);
-    auto size = computeWindowSize();
-    _swapchain->resize(size[0], size[1]);
+    auto display_size = computeWindowSize();
+    _swapchain->resize(display_size[0], display_size[1]);
+
+    auto display_w = display_size[0];
+    auto display_h = display_size[1];
+    auto w = size().width();
+    auto h = size().height();
+    ImGuiIO &io = ImGui::GetIO();
+    io.DisplaySize = ImVec2((float)w, (float)h);
+    if (w > 0 && h > 0)
+        io.DisplayFramebufferScale = ImVec2((float)display_w / (float)w, (float)display_h / (float)h);
 }
 
 /// Updates the animation timing variables.
-double Viewport::updateTime() {
+pxr::UsdTimeCode Viewport::updateTime() {
     double currentTimeInSeconds = getCurrentTimeInSeconds();
 
     // Store the ticks for the first frame.
@@ -160,16 +161,24 @@ double Viewport::updateTime() {
 /// Draw the scene, and blit the result to the view.
 /// Returns false if the engine wasn't initialized.
 void Viewport::draw() {
-    double timeCode = updateTime();
+    auto timeCode = updateTime();
+    _model.setCurrentFrame(timeCode);
+
+    ImGuiIO &io = ImGui::GetIO();
+    const QPoint pos = mapFromGlobal(QCursor::pos());
+    io.MousePos = ImVec2(pos.x(), pos.y());
+
+    auto drawable = _swapchain->nextDrawable();
 
     // Start the next frame.
     dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
     auto *hgi = static_cast<HgiMetal *>(_hgi.get());
     hgi->StartFrame();
 
+    // Draw the scene hud
+    drawHUD();
     // Draw the scene using Hydra, and recast the result to a MTLTexture.
-    CGSize viewSize = _swapchain->layer()->drawableSize();
-    HgiTextureHandle hgiTexture = drawWithHydra(timeCode, viewSize);
+    HgiTextureHandle hgiTexture = drawWithHydra();
     auto texture = static_cast<HgiMetalTexture *>(hgiTexture.Get())->GetTextureId();
 
     // Create a command buffer to blit the texture to the view.
@@ -180,15 +189,22 @@ void Viewport::draw() {
     }];
 
     // Copy the rendered texture to the view.
-    _swapchain->present((MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
+    _swapchain->present(drawable, (MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
 
     // Tell Hydra to commit the command buffer, and complete the work.
     hgi->CommitPrimaryCommandBuffer();
     hgi->EndFrame();
 }
 
+void Viewport::drawHUD() {
+    ImGui::Begin("HUD");
+    _framerate.record();
+    ImGui::Text("Display - %f fps", _framerate.report());
+    ImGui::End();
+}
+
 /// Draws the scene using Hydra.
-pxr::HgiTextureHandle Viewport::drawWithHydra(double timeCode, CGSize viewSize) {
+pxr::HgiTextureHandle Viewport::drawWithHydra() {
     // Camera projection setup.
     auto [gfCamera, cameraAspect] = resolveCamera();
     auto frustum = gfCamera.GetFrustum();
@@ -238,11 +254,52 @@ pxr::HgiTextureHandle Viewport::drawWithHydra(double timeCode, CGSize viewSize) 
     light_mat.SetShininess(32.0);
     _engine->SetLightingState(lights, light_mat, sceneAmbient);
 
-    // Nondefault render parameters.
-    _renderParams.clearColor = GfVec4f(0.3, 0.3, 0.3, 1);
-    _renderParams.colorCorrectionMode = HdxColorCorrectionTokens->sRGB;
-    _renderParams.frame = timeCode;
+    auto highlightMode = _model.viewSettings().selHighlightMode();
+    bool drawSelHighlights;
+    if (_model.playing()) {
+        // Highlight mode must be ALWAYS to draw highlights during playback.
+        drawSelHighlights = highlightMode == SelectionHighlightModes::ALWAYS;
+    } else {
+        // Highlight mode can be ONLY_WHEN_PAUSED or ALWAYS to draw
+        // highlights when paused.
+        drawSelHighlights = highlightMode != SelectionHighlightModes::NEVER;
+    }
+
+    // update rendering parameters
+    _renderParams.frame = _model.currentFrame();
+    _renderParams.complexity = _model.viewSettings().complexity().value();
     _renderParams.drawMode = _renderModeDict[_model.viewSettings().renderMode()];
+    _renderParams.showGuides = _model.viewSettings().displayGuide();
+    _renderParams.showProxy = _model.viewSettings().displayProxy();
+    _renderParams.showRender = _model.viewSettings().displayRender();
+    _renderParams.forceRefresh = _forceRefresh;
+    _renderParams.cullStyle = _model.viewSettings().cullBackfaces() ?
+                                  pxr::UsdImagingGLCullStyle::CULL_STYLE_BACK_UNLESS_DOUBLE_SIDED :
+                                  pxr::UsdImagingGLCullStyle::CULL_STYLE_NOTHING;
+
+    _renderParams.gammaCorrectColors = false;
+    _renderParams.enableIdRender = _model.viewSettings().displayPrimId();
+    _renderParams.enableSampleAlphaToCoverage = !_model.viewSettings().displayPrimId();
+    _renderParams.highlight = drawSelHighlights;
+    _renderParams.enableSceneMaterials = _model.viewSettings().enableSceneMaterials();
+    _renderParams.enableSceneLights = _model.viewSettings().enableSceneLights();
+    _renderParams.clearColor = _model.viewSettings().clearColor();
+
+    auto ccMode = _model.viewSettings().colorCorrectionMode();
+    _renderParams.colorCorrectionMode = pxr::TfToken(to_constants(ccMode));
+    if (ccMode == ColorCorrectionModes::OPENCOLORIO) {
+        _renderParams.ocioDisplay = pxr::TfToken(_model.viewSettings().ocioSettings().display());
+        _renderParams.ocioView = pxr::TfToken(_model.viewSettings().ocioSettings().view());
+        _renderParams.ocioColorSpace = pxr::TfToken(_model.viewSettings().ocioSettings().colorSpace());
+    }
+    auto pseudoRoot = _model.stage()->GetPseudoRoot();
+
+    _engine->SetSelectionColor(_model.viewSettings().highlightColor());
+    _engine->SetRendererSetting(
+        pxr::TfToken("domeLightCameraVisibility"),
+        pxr::VtValue(_model.viewSettings().domeLightTexturesVisible()));
+
+    _processBBoxes();
 
     // Render the frame.
     TfErrorMark mark;
@@ -574,6 +631,11 @@ void Viewport::mousePressEvent(QMouseEvent *event) {
     } else {
         _cameraMode = CameraMode::Pick;
         pickObject(x, y, event->button(), event->modifiers());
+
+        ImGuiIO &io = ImGui::GetIO();
+        io.MouseDown[0] = event->buttons() & Qt::LeftButton;
+        io.MouseDown[1] = event->buttons() & Qt::MiddleButton;
+        io.MouseDown[2] = event->buttons() & Qt::RightButton;
     }
     _lastX = x;
     _lastY = y;
@@ -582,6 +644,11 @@ void Viewport::mousePressEvent(QMouseEvent *event) {
 void Viewport::mouseReleaseEvent(QMouseEvent *event) {
     _cameraMode = CameraMode::None;
     _dragActive = false;
+
+    ImGuiIO &io = ImGui::GetIO();
+    io.MouseDown[0] = event->buttons() & Qt::LeftButton;
+    io.MouseDown[1] = event->buttons() & Qt::MiddleButton;
+    io.MouseDown[2] = event->buttons() & Qt::RightButton;
 }
 
 void Viewport::mouseMoveEvent(QMouseEvent *event) {
@@ -634,6 +701,24 @@ void Viewport::mouseMoveEvent(QMouseEvent *event) {
 void Viewport::wheelEvent(QWheelEvent *event) {
     switchToFreeCamera();
     _model.viewSettings().freeCamera()->AdjustDistance(1.f - std::max(-0.5f, std::min(0.5f, (float(event->angleDelta().y()) / 1000.f))));
+
+    ImGuiIO &io = ImGui::GetIO();
+    // Handle horizontal component
+    if (event->pixelDelta().x() != 0) {
+        io.MouseWheelH = event->pixelDelta().x() / (ImGui::GetTextLineHeight());
+    } else {
+        // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
+        io.MouseWheelH = event->angleDelta().x() / 120.0f;
+    }
+
+    // Handle vertical component
+    if (event->pixelDelta().y() != 0) {
+        // 5 lines per unit
+        io.MouseWheel = event->pixelDelta().y() / (5.0 * ImGui::GetTextLineHeight());
+    } else {
+        // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
+        io.MouseWheel = event->angleDelta().y() / 120.0f;
+    }
 }
 
 void Viewport::_stageReplaced() {
@@ -642,6 +727,40 @@ void Viewport::_stageReplaced() {
         auto camera = _createNewFreeCamera(_model.viewSettings(), _stageIsZup);
         _model.viewSettings().setFreeCamera(camera);
         updateView(true, true);
+    }
+}
+
+void Viewport::_processBBoxes() {
+    // Determine if any bbox should be enabled
+    auto enableBBoxes = _model.viewSettings().showBBoxes() && (_model.viewSettings().showBBoxPlayback() || !_model.playing());
+
+    if (enableBBoxes) {
+        // Build the list of bboxes to draw
+        pxr::UsdImagingGLRenderParams::BBoxVector bboxes = {};
+        if (_model.viewSettings().showAABBox()) {
+            bboxes.emplace_back(_selectionBrange);
+        }
+        if (_model.viewSettings().showOBBox()) {
+            bboxes.emplace_back(_selectionBBox);
+        }
+
+        // Compute the color to use for the bbox lines
+        auto col = _model.viewSettings().clearColor();
+        auto color = pxr::GfVec4f(col[0] > 0.5 ? col[0] - .6f : col[0] + .6f,
+                                  col[1] > 0.5 ? col[1] - .6f : col[1] + .6f,
+                                  col[2] > 0.5 ? col[2] - .6f : col[2] + .6f,
+                                  1);
+        color[0] = pxr::GfClamp(color[0], 0, 1);
+        color[1] = pxr::GfClamp(color[1], 0, 1);
+        color[2] = pxr::GfClamp(color[2], 0, 1);
+
+        // Pass data to renderer via renderParams
+        _renderParams.bboxes = bboxes;
+        _renderParams.bboxLineColor = color;
+        _renderParams.bboxLineDashSize = 3;
+    } else {
+        // No bboxes should be drawn
+        _renderParams.bboxes = {};
     }
 }
 

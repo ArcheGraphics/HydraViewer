@@ -100,6 +100,7 @@ QFont to_constants(UIFonts value) {
             INHERITED.setItalic(true);
         }
     }
+    return {};
 }
 
 Qt::Key to_constants(KeyboardShortcuts value) {
@@ -131,7 +132,9 @@ std::string to_constants(RenderModes value) {
         case RenderModes::GEOM_FLAT: return "Geom Flat";
         case RenderModes::GEOM_SMOOTH: return "Geom Smooth";
         case RenderModes::HIDDEN_SURFACE_WIREFRAME: return "Hidden Surface Wireframe";
+        case RenderModes::Count: break;
     }
+    return "";
 }
 
 std::string to_constants(ShadedRenderModes value) {

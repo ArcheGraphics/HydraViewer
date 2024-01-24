@@ -8,6 +8,7 @@
 #include "editor/framerate.h"
 #include "panels/stage_tree.h"
 #include "panels/render_settings.h"
+#include "panels/view_settings_view.h"
 #include "editor/node/graph_model.h"
 #include <QMenuBar>
 #include <QActionGroup>
@@ -53,14 +54,9 @@ Windows::Windows(int width, int height)
 
 void Windows::run() {
     show();
-    vox::Framerate framerate;
     while (isVisible()) {
         viewport->draw();
         QApplication::processEvents();
-
-        framerate.record();
-        auto title = fmt::format("Display - {:.2f} fps", framerate.report());
-        setWindowTitle(title.c_str());
     }
 }
 
@@ -91,8 +87,7 @@ void Windows::_initUI() {
 
     // region Properties
     {
-        auto render_settings_widget = new RenderSettingsWidget(viewport);
-        render_settings_widget->onRendererChanged();
+        auto render_settings_widget = new ViewSettingsView(model);
         auto properties_dock_widget = new QDockWidget();
         properties_dock_widget->setWindowTitle("Properties");
         properties_dock_widget->setWidget(render_settings_widget);

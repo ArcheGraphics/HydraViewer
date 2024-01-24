@@ -25,6 +25,7 @@ target_link_libraries(${PROJECT_NAME}
         fmt::fmt
         metal-cpp
         QtNodes
+        imgui
         editor
         ${PXR_LIBRARY_NAMES}
 )

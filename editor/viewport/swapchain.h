@@ -27,14 +27,19 @@ public:
 
     [[nodiscard]] auto layer() const noexcept { return _layer; }
 
-    void present(MTL::CommandBuffer *commandBuffer, MTL::Texture *image) noexcept;
+    MTL::Drawable *nextDrawable();
+
+    void present(MTL::Drawable *drawable, MTL::CommandBuffer *commandBuffer, MTL::Texture *image) noexcept;
 
     void set_name(std::string_view name) noexcept;
 
     void resize(int width, int height);
 
+
 private:
     void create_pso(MTL::Device *device);
+
+    static void applyStyle();
 
 private:
     CA::MetalLayer *_layer{};

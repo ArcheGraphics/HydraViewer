@@ -25,28 +25,24 @@ target_link_libraries(metal-cpp
 # node editor
 add_subdirectory(nodeeditor)
 
-
 # imgui
-#set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
-#set(IMGUI_FILES
-#        "${IMGUI_DIR}/imgui.cpp"
-#        "${IMGUI_DIR}/imgui_demo.cpp"
-#        "${IMGUI_DIR}/imgui_draw.cpp"
-#        "${IMGUI_DIR}/imgui_tables.cpp"
-#        "${IMGUI_DIR}/imgui_widgets.cpp"
-#        "${IMGUI_DIR}/imconfig.h"
-#        "${IMGUI_DIR}/imgui.h"
-#        "${IMGUI_DIR}/imgui_internal.h"
-#        "${IMGUI_DIR}/imstb_rectpack.h"
-#        "${IMGUI_DIR}/imstb_textedit.h"
-#        "${IMGUI_DIR}/imstb_truetype.h"
-#        "${IMGUI_DIR}/misc/cpp/imgui_stdlib.cpp"
-#        "${IMGUI_DIR}/misc/cpp/imgui_stdlib.h")
-#add_library(imgui STATIC ${IMGUI_FILES})
-#target_include_directories(imgui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/misc/cpp)
-#target_compile_definitions(imgui PUBLIC IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h")
-#set_target_properties(imgui PROPERTIES FOLDER "ThirdParty" POSITION_INDEPENDENT_CODE ON)
-#
-## stb
-#add_library(stb INTERFACE)
-#target_include_directories(stb INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/stb")
+set(IMGUI_DIR "${CMAKE_CURRENT_SOURCE_DIR}/imgui")
+set(IMGUI_FILES
+        "${IMGUI_DIR}/imgui.cpp"
+        "${IMGUI_DIR}/imgui_draw.cpp"
+        "${IMGUI_DIR}/imgui_tables.cpp"
+        "${IMGUI_DIR}/imgui_widgets.cpp"
+        "${IMGUI_DIR}/imgui.h"
+        "${IMGUI_DIR}/imgui_internal.h"
+        "${IMGUI_DIR}/imstb_rectpack.h"
+        "${IMGUI_DIR}/imstb_textedit.h"
+        "${IMGUI_DIR}/imstb_truetype.h"
+        "${IMGUI_DIR}/backends/imgui_impl_metal.h"
+        "${IMGUI_DIR}/backends/imgui_impl_metal.mm"
+)
+add_library(imgui OBJECT ${IMGUI_FILES})
+target_include_directories(imgui PUBLIC ${IMGUI_DIR} ${IMGUI_DIR}/misc/cpp)
+target_compile_definitions(imgui PUBLIC IMGUI_USER_CONFIG="${CMAKE_CURRENT_SOURCE_DIR}/imconfig.h")
+target_link_libraries(imgui PRIVATE
+        metal-cpp
+)
