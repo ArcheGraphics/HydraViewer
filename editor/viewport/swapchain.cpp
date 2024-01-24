@@ -34,7 +34,8 @@ Swapchain::Swapchain(MTL::Device *device, uint64_t window_handle,
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;// Enable Keyboard Controls
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad; // Enable Gamepad Controls
     applyStyle();
-    io.FontDefault = io.Fonts->AddFontFromFileTTF(fmt::format("{}/{}", PROJECT_PATH, "editor/fonts/Roboto-Regular.ttf").c_str(), 15);
+    io.FontDefault = io.Fonts->AddFontFromFileTTF(fmt::format("{}/{}", PROJECT_PATH, "editor/fonts/Roboto-Regular.ttf").c_str(), 50);
+    io.FontGlobalScale = 0.3;
 
     // Global scale
     ImGui_ImplMetal_Init(device);

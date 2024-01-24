@@ -197,7 +197,7 @@ void Viewport::draw() {
 }
 
 void Viewport::drawHUD() {
-    ImGui::Begin("HUD");
+    ImGui::Begin("Scene Info");
     _framerate.record();
     ImGui::Text("Display - %f fps", _framerate.report());
     ImGui::End();

@@ -101,7 +101,7 @@ void Windows::_initUI() {
     {
         auto node_view = _create_node_graph();
         auto node_graph_dock_widget = new QDockWidget();
-        node_graph_dock_widget->setWindowTitle("node graph");
+        node_graph_dock_widget->setWindowTitle("Nodegraph");
         node_graph_dock_widget->setWidget(node_view);
         node_graph_dock_widget->setAllowedAreas(Qt::BottomDockWidgetArea);
         node_graph_dock_widget->setFeatures(QDockWidget::DockWidgetFloatable);
