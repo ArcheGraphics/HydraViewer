@@ -211,34 +211,42 @@ pxr::HgiTextureHandle Viewport::drawWithHydra(double timeCode, CGSize viewSize) 
                                 frustum.ComputeProjectionMatrix());
     }
 
-    // Light and material setup.
-    {
-        GlfSimpleLightVector lights;
+    auto cam_pos = frustum.GetPosition();
+    pxr::GfVec4f sceneAmbient = GfVec4f(0.1f, 0.1f, 0.1f, 1.0f);
+    pxr::GlfSimpleMaterial light_mat;
+    GlfSimpleLightVector lights;
+    if (_model.viewSettings().ambientLightOnly()) {
         auto l = pxr::GlfSimpleLight();
         l.SetAmbient({0, 0, 0, 0});
-        auto cam_pos = frustum.GetPosition();
         l.SetPosition({(float)cam_pos[0], (float)cam_pos[1], (float)cam_pos[2], 1});
         lights.push_back(l);
-
-        float kA = 0.2f;
-        float kS = 0.1f;
-        pxr::GlfSimpleMaterial light_mat;
-        light_mat.SetAmbient(GfVec4f(kA, kA, kA, 1.0f));
-        light_mat.SetSpecular(GfVec4f(kS, kS, kS, 1.0f));
-        light_mat.SetShininess(32.0);
-        pxr::GfVec4f sceneAmbient = GfVec4f(0.01f, 0.01f, 0.01f, 1.0f);
-        _engine->SetLightingState(lights, light_mat, sceneAmbient);
     }
 
+    if (_model.viewSettings().domeLightEnabled()) {
+        auto l = pxr::GlfSimpleLight();
+        l.SetIsDomeLight(true);
+        if (_stageIsZup) {
+            l.SetTransform(pxr::GfMatrix4d().SetRotate(pxr::GfRotation(pxr::GfVec3d::XAxis(), 90)));
+        }
+        lights.push_back(l);
+    }
+
+    auto kA = _model.viewSettings().defaultMaterialAmbient();
+    auto kS = _model.viewSettings().defaultMaterialSpecular();
+    light_mat.SetAmbient(GfVec4f(kA, kA, kA, 1.0f));
+    light_mat.SetSpecular(GfVec4f(kS, kS, kS, 1.0f));
+    light_mat.SetShininess(32.0);
+    _engine->SetLightingState(lights, light_mat, sceneAmbient);
+
     // Nondefault render parameters.
-    UsdImagingGLRenderParams params;
-    params.clearColor = GfVec4f(0.0f, 0.0f, 0.0f, 0.0f);
-    params.colorCorrectionMode = HdxColorCorrectionTokens->sRGB;
-    params.frame = timeCode;
+    _renderParams.clearColor = GfVec4f(0.3, 0.3, 0.3, 1);
+    _renderParams.colorCorrectionMode = HdxColorCorrectionTokens->sRGB;
+    _renderParams.frame = timeCode;
+    _renderParams.drawMode = _renderModeDict[_model.viewSettings().renderMode()];
 
     // Render the frame.
     TfErrorMark mark;
-    _engine->Render(_model.stage()->GetPseudoRoot(), params);
+    _engine->Render(_model.stage()->GetPseudoRoot(), _renderParams);
     TF_VERIFY(mark.IsClean(), "Errors occurred while rendering!");
 
     // Return the color output.
@@ -631,7 +639,9 @@ void Viewport::wheelEvent(QWheelEvent *event) {
 void Viewport::_stageReplaced() {
     if (_model.stage()) {
         _stageIsZup = (pxr::UsdGeomGetStageUpAxis(_model.stage()) == pxr::UsdGeomTokens->z);
-        _model.viewSettings().setFreeCamera(_createNewFreeCamera(_model.viewSettings(), _stageIsZup));
+        auto camera = _createNewFreeCamera(_model.viewSettings(), _stageIsZup);
+        _model.viewSettings().setFreeCamera(camera);
+        updateView(true, true);
     }
 }
 

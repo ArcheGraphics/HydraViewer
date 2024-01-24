@@ -228,7 +228,7 @@ pxr::GfCamera FreeCamera::computeGfCamera(pxr::GfBBox3d stageBBox, bool autoClip
 void FreeCamera::frameSelection(pxr::GfBBox3d selBBox, float frameFit) {
     _closestVisibleDist = std::nullopt;
 
-    auto center = selBBox.ComputeCentroid();
+    setCenter(selBBox.ComputeCentroid());
     auto selRange = selBBox.ComputeAlignedRange();
     auto size = selRange.GetSize();
     _selSize = std::max(std::max(size[0], size[1]), size[2]);
