@@ -162,39 +162,40 @@ pxr::UsdTimeCode Viewport::updateTime() {
 /// Draw the scene, and blit the result to the view.
 /// Returns false if the engine wasn't initialized.
 void Viewport::draw() {
-    auto timeCode = updateTime();
-    _model.setCurrentFrame(timeCode);
-
-    ImGuiIO &io = ImGui::GetIO();
-    const QPoint pos = mapFromGlobal(QCursor::pos());
-    io.MousePos = ImVec2(pos.x(), pos.y());
-
     auto drawable = _swapchain->nextDrawable();
+    if (drawable) {
+        auto timeCode = updateTime();
+        _model.setCurrentFrame(timeCode);
 
-    // Start the next frame.
-    dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
-    auto *hgi = static_cast<HgiMetal *>(_hgi.get());
-    hgi->StartFrame();
+        ImGuiIO &io = ImGui::GetIO();
+        const QPoint pos = mapFromGlobal(QCursor::pos());
+        io.MousePos = ImVec2(pos.x(), pos.y());
 
-    // Draw the scene hud
-    drawHUD();
-    // Draw the scene using Hydra, and recast the result to a MTLTexture.
-    HgiTextureHandle hgiTexture = drawWithHydra();
-    auto texture = static_cast<HgiMetalTexture *>(hgiTexture.Get())->GetTextureId();
+        // Start the next frame.
+        dispatch_semaphore_wait(_inFlightSemaphore, DISPATCH_TIME_FOREVER);
+        auto *hgi = static_cast<HgiMetal *>(_hgi.get());
+        hgi->StartFrame();
 
-    // Create a command buffer to blit the texture to the view.
-    id<MTLCommandBuffer> commandBuffer = hgi->GetPrimaryCommandBuffer();
-    __block dispatch_semaphore_t blockSemaphore = _inFlightSemaphore;
-    [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
-        dispatch_semaphore_signal(blockSemaphore);
-    }];
+        // Draw the scene hud
+        drawHUD();
+        // Draw the scene using Hydra, and recast the result to a MTLTexture.
+        HgiTextureHandle hgiTexture = drawWithHydra();
+        auto texture = static_cast<HgiMetalTexture *>(hgiTexture.Get())->GetTextureId();
 
-    // Copy the rendered texture to the view.
-    _swapchain->present(drawable, (MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
+        // Create a command buffer to blit the texture to the view.
+        id<MTLCommandBuffer> commandBuffer = hgi->GetPrimaryCommandBuffer();
+        __block dispatch_semaphore_t blockSemaphore = _inFlightSemaphore;
+        [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+            dispatch_semaphore_signal(blockSemaphore);
+        }];
 
-    // Tell Hydra to commit the command buffer, and complete the work.
-    hgi->CommitPrimaryCommandBuffer();
-    hgi->EndFrame();
+        // Copy the rendered texture to the view.
+        _swapchain->present(drawable, (MTL::CommandBuffer *)(commandBuffer), (MTL::Texture *)(texture));
+
+        // Tell Hydra to commit the command buffer, and complete the work.
+        hgi->CommitPrimaryCommandBuffer();
+        hgi->EndFrame();
+    }
 }
 
 // Return a string that reports size in metric units (units of 1000, not 1024).

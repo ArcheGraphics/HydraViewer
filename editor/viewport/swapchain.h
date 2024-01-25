@@ -25,8 +25,6 @@ public:
 
     ~Swapchain() noexcept;
 
-    [[nodiscard]] auto layer() const noexcept { return _layer; }
-
     MTL::Drawable *nextDrawable();
 
     void present(MTL::Drawable *drawable, MTL::CommandBuffer *commandBuffer, MTL::Texture *image) noexcept;

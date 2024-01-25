@@ -31,5 +31,7 @@ private:
     void _initUI();
     void _initMenuBar();
     QtNodes::GraphicsView *_create_node_graph();
+    void _showAboutTriggered();
+    float _version{0.01};
 };
 }// namespace vox
