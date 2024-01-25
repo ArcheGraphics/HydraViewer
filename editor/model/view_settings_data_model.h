@@ -73,34 +73,35 @@ public:
 
     explicit ViewSettingsDataModel(RootDataModel &rootDataModel);
 
+    Q_PROPERTY(pxr::GfVec4f cameraMaskColor READ cameraMaskColor WRITE setCameraMaskColor)
     pxr::GfVec4f cameraMaskColor();
-
     void setCameraMaskColor(pxr::GfVec4f value);
 
+    Q_PROPERTY(pxr::GfVec4f cameraReticlesColor READ cameraReticlesColor WRITE setCameraReticlesColor)
     pxr::GfVec4f cameraReticlesColor();
-
     void setCameraReticlesColor(pxr::GfVec4f value);
 
+    Q_PROPERTY(float defaultMaterialAmbient READ defaultMaterialAmbient WRITE setDefaultMaterialAmbient)
     [[nodiscard]] float defaultMaterialAmbient() const;
     void setDefaultMaterialAmbient(float val);
 
+    Q_PROPERTY(float defaultMaterialSpecular READ defaultMaterialSpecular WRITE setDefaultMaterialSpecular)
     [[nodiscard]] float defaultMaterialSpecular() const;
     void setDefaultMaterialSpecular(float val);
 
     void setDefaultMaterial(float ambient, float specular);
-
     void resetDefaultMaterial();
 
+    Q_PROPERTY(RefinementComplexities complexity READ complexity WRITE setComplexity)
     RefinementComplexities complexity();
-
     void setComplexity(RefinementComplexities value);
 
+    Q_PROPERTY(RenderModes renderMode READ renderMode WRITE setRenderMode)
     RenderModes renderMode();
-
     void setRenderMode(RenderModes value);
 
+    Q_PROPERTY(float freeCameraFOV READ freeCameraFOV WRITE setFreeCameraFOV)
     [[nodiscard]] float freeCameraFOV() const;
-
     void setFreeCameraFOV(float value);
 
     /// Returns the free camera's near clipping plane value, if it has been
@@ -121,190 +122,187 @@ public:
     ///  clear the current override
     void setFreeCameraOverrideFar(std::optional<float> value);
 
+    Q_PROPERTY(float freeCameraAspect READ freeCameraAspect WRITE setFreeCameraAspect)
     [[nodiscard]] float freeCameraAspect() const;
-
     void setFreeCameraAspect(float value);
 
+    Q_PROPERTY(bool lockFreeCameraAspect READ lockFreeCameraAspect WRITE setLockFreeCameraAspect)
     [[nodiscard]] bool lockFreeCameraAspect() const;
-
     void setLockFreeCameraAspect(bool val);
 
+    Q_PROPERTY(ColorCorrectionModes colorCorrectionMode READ colorCorrectionMode WRITE setColorCorrectionMode)
     ColorCorrectionModes colorCorrectionMode();
-
     void setColorCorrectionMode(ColorCorrectionModes value);
 
+    Q_PROPERTY(OCIOSettings ocioSettings READ ocioSettings WRITE setOcioSettings)
     OCIOSettings &ocioSettings();
-
     /// Specifies the OCIO settings to be used. Setting the OCIO 'display'
     //  requires a 'view' to be specified.
     void setOcioSettings(OCIOSettings value);
 
+    Q_PROPERTY(PickModes pickMode READ pickMode WRITE setPickMode)
     PickModes pickMode();
-
     void setPickMode(PickModes value);
 
+    Q_PROPERTY(bool showAABBox READ showAABBox WRITE setShowAABBox)
     [[nodiscard]] bool showAABBox() const;
-
     void setShowAABBox(bool value);
 
+    Q_PROPERTY(bool showOBBox READ showOBBox WRITE setShowOBBox)
     [[nodiscard]] bool showOBBox() const;
-
     void setShowOBBox(bool value);
 
+    Q_PROPERTY(bool showBBoxes READ showBBoxes WRITE setShowBBoxes)
     [[nodiscard]] bool showBBoxes() const;
-
     void setShowBBoxes(bool value);
 
+    Q_PROPERTY(bool autoComputeClippingPlanes READ autoComputeClippingPlanes WRITE setAutoComputeClippingPlanes)
     [[nodiscard]] bool autoComputeClippingPlanes() const;
-
     void setAutoComputeClippingPlanes(bool value);
 
+    Q_PROPERTY(bool showBBoxPlayback READ showBBoxPlayback WRITE setShowBBoxPlayback)
     [[nodiscard]] bool showBBoxPlayback() const;
-
     void setShowBBoxPlayback(bool value);
 
+    Q_PROPERTY(bool displayGuide READ displayGuide WRITE setDisplayGuide)
     [[nodiscard]] bool displayGuide() const;
-
     void setDisplayGuide(bool value);
 
+    Q_PROPERTY(bool displayProxy READ displayProxy WRITE setDisplayProxy)
     [[nodiscard]] bool displayProxy() const;
-
     void setDisplayProxy(bool value);
 
+    Q_PROPERTY(bool displayRender READ displayRender WRITE setDisplayRender)
     [[nodiscard]] bool displayRender() const;
-
     void setDisplayRender(bool value);
 
+    Q_PROPERTY(bool displayCameraOracles READ displayCameraOracles WRITE setDisplayCameraOracles)
     [[nodiscard]] bool displayCameraOracles() const;
-
     void setDisplayCameraOracles(bool value);
 
+    Q_PROPERTY(bool displayPrimId READ displayPrimId WRITE setDisplayPrimId)
     [[nodiscard]] bool displayPrimId() const;
-
     void setDisplayPrimId(bool value);
 
+    Q_PROPERTY(bool enableSceneMaterials READ enableSceneMaterials WRITE setEnableSceneMaterials)
     [[nodiscard]] bool enableSceneMaterials() const;
-
     void setEnableSceneMaterials(bool value);
 
+    Q_PROPERTY(bool enableSceneLights READ enableSceneLights WRITE setEnableSceneLights)
     [[nodiscard]] bool enableSceneLights() const;
-
     void setEnableSceneLights(bool value);
 
+    Q_PROPERTY(bool cullBackfaces READ cullBackfaces WRITE setCullBackfaces)
     [[nodiscard]] bool cullBackfaces() const;
-
     void setCullBackfaces(bool value);
 
+    Q_PROPERTY(bool showInactivePrims READ showInactivePrims WRITE setShowInactivePrims)
     [[nodiscard]] bool showInactivePrims() const;
-
     void setShowInactivePrims(bool value);
 
+    Q_PROPERTY(bool showAllPrototypePrims READ showAllPrototypePrims WRITE setShowAllPrototypePrims)
     [[nodiscard]] bool showAllPrototypePrims() const;
-
     void setShowAllPrototypePrims(bool value);
 
+    Q_PROPERTY(bool showUndefinedPrims READ showUndefinedPrims WRITE setShowUndefinedPrims)
     [[nodiscard]] bool showUndefinedPrims() const;
-
     void setShowUndefinedPrims(bool value);
 
+    Q_PROPERTY(bool showAbstractPrims READ showAbstractPrims WRITE setShowAbstractPrims)
     [[nodiscard]] bool showAbstractPrims() const;
-
     void setShowAbstractPrims(bool value);
 
+    Q_PROPERTY(bool showPrimDisplayNames READ showPrimDisplayNames WRITE setShowPrimDisplayNames)
     [[nodiscard]] bool showPrimDisplayNames() const;
-
     void setShowPrimDisplayNames(bool value);
 
+    Q_PROPERTY(bool rolloverPrimInfo READ rolloverPrimInfo WRITE setRolloverPrimInfo)
     [[nodiscard]] bool rolloverPrimInfo() const;
-
     void setRolloverPrimInfo(bool value);
 
+    Q_PROPERTY(CameraMaskModes cameraMaskMode READ cameraMaskMode WRITE setCameraMaskMode)
     CameraMaskModes cameraMaskMode();
-
     void setCameraMaskMode(CameraMaskModes value);
 
     bool showMask();
 
     bool showMask_Opaque();
 
+    Q_PROPERTY(bool showMask_Outline READ showMask_Outline WRITE setShowMask_Outline)
     [[nodiscard]] bool showMask_Outline() const;
-
     void setShowMask_Outline(bool value);
 
+    Q_PROPERTY(bool showReticles_Inside READ showReticles_Inside WRITE setShowReticles_Inside)
     [[nodiscard]] bool showReticles_Inside() const;
-
     void setShowReticles_Inside(bool value);
 
+    Q_PROPERTY(bool showReticles_Outside READ showReticles_Outside WRITE setShowReticles_Outside)
     [[nodiscard]] bool showReticles_Outside() const;
-
     void setShowReticles_Outside(bool value);
 
+    Q_PROPERTY(bool showHUD READ showHUD WRITE setShowHUD)
     [[nodiscard]] bool showHUD() const;
-
     void setShowHUD(bool value);
 
+    Q_PROPERTY(bool showHUD_Info READ showHUD_Info WRITE setShowHUD_Info)
     [[nodiscard]] bool showHUD_Info() const;
-
     void setShowHUD_Info(bool value);
 
+    Q_PROPERTY(bool showHUD_Complexity READ showHUD_Complexity WRITE setShowHUD_Complexity)
     [[nodiscard]] bool showHUD_Complexity() const;
-
     void setShowHUD_Complexity(bool value);
 
+    Q_PROPERTY(bool showHUD_Performance READ showHUD_Performance WRITE setShowHUD_Performance)
     [[nodiscard]] bool showHUD_Performance() const;
-
     void setShowHUD_Performance(bool value);
 
+    Q_PROPERTY(bool showHUD_GPUstats READ showHUD_GPUstats WRITE setShowHUD_GPUstats)
     [[nodiscard]] bool showHUD_GPUstats() const;
-
     void setShowHUD_GPUstats(bool value);
 
+    Q_PROPERTY(bool ambientLightOnly READ ambientLightOnly WRITE setAmbientLightOnly)
     [[nodiscard]] bool ambientLightOnly() const;
-
     void setAmbientLightOnly(bool value);
 
+    Q_PROPERTY(bool domeLightEnabled READ domeLightEnabled WRITE setDomeLightEnabled)
     [[nodiscard]] bool domeLightEnabled() const;
-
     void setDomeLightEnabled(bool value);
 
+    Q_PROPERTY(bool domeLightTexturesVisible READ domeLightTexturesVisible WRITE setDomeLightTexturesVisible)
     [[nodiscard]] bool domeLightTexturesVisible() const;
-
     void setDomeLightTexturesVisible(bool value);
 
+    Q_PROPERTY(ClearColors clearColorText READ clearColorText WRITE setClearColorText)
     ClearColors clearColorText();
-
     void setClearColorText(ClearColors value);
 
     pxr::GfVec4f clearColor();
 
+    Q_PROPERTY(HighlightColors highlightColorName READ highlightColorName WRITE setHighlightColorName)
     HighlightColors highlightColorName();
-
     void setHighlightColorName(HighlightColors value);
 
     pxr::GfVec4f highlightColor();
 
+    Q_PROPERTY(SelectionHighlightModes selHighlightMode READ selHighlightMode WRITE setSelHighlightMode)
     SelectionHighlightModes selHighlightMode();
-
     void setSelHighlightMode(SelectionHighlightModes value);
 
+    Q_PROPERTY(bool redrawOnScrub READ redrawOnScrub WRITE setRedrawOnScrub)
     [[nodiscard]] bool redrawOnScrub() const;
-
     void setRedrawOnScrub(bool value);
 
     std::shared_ptr<FreeCamera> freeCamera();
-
     void setFreeCamera(std::shared_ptr<FreeCamera> value);
 
     std::optional<pxr::SdfPath> cameraPath();
-
     void setCameraPath(std::optional<pxr::SdfPath> value);
 
     std::optional<pxr::UsdPrim> cameraPrim();
-
     void setCameraPrim(std::optional<pxr::UsdPrim> value);
 
+    Q_PROPERTY(int fontSize READ fontSize WRITE setFontSize)
     [[nodiscard]] int fontSize() const;
-
     void setFontSize(int value);
 
 private:

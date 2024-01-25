@@ -17,6 +17,8 @@ enum class ClearColors {
     DARK_GREY,
     LIGHT_GREY,
     WHITE,
+
+    Count
 };
 std::string to_constants(ClearColors value);
 
@@ -31,7 +33,9 @@ std::string to_constants(DefaultFontFamily value);
 enum class HighlightColors {
     WHITE,
     YELLOW,
-    CYAN
+    CYAN,
+
+    Count
 };
 std::string to_constants(HighlightColors value);
 
@@ -141,7 +145,9 @@ std::string to_constants(ShadedRenderModes value);
 enum class ColorCorrectionModes {
     DISABLED,
     SRGB,
-    OPENCOLORIO
+    OPENCOLORIO,
+
+    Count
 };
 std::string to_constants(ColorCorrectionModes value);
 
@@ -149,21 +155,27 @@ enum class PickModes {
     PRIMS,
     MODELS,
     INSTANCES,
-    PROTOTYPES
+    PROTOTYPES,
+
+    Count
 };
 std::string to_constants(PickModes value);
 
 enum class SelectionHighlightModes {
     NEVER,
     ONLY_WHEN_PAUSED,
-    ALWAYS
+    ALWAYS,
+
+    Count
 };
 std::string to_constants(SelectionHighlightModes value);
 
 enum class CameraMaskModes {
     NONE,
     PARTIAL,
-    FULL
+    FULL,
+
+    Count
 };
 std::string to_constants(CameraMaskModes value);
 

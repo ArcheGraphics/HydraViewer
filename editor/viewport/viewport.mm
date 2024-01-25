@@ -197,10 +197,33 @@ void Viewport::draw() {
     hgi->EndFrame();
 }
 
+// Return a string that reports size in metric units (units of 1000, not 1024).
+std::string reportMetricSize(long double sizeInBytes) {
+    if (sizeInBytes == 0)
+        return "0 B";
+    std::array sizeSuffixes = {"B", "KB", "MB", "GB", "TB", "PB", "EB"};
+    auto i = int(std::floor(std::log10(sizeInBytes) / 3));
+    if (i >= sizeSuffixes.size()) {
+        i = sizeSuffixes.size() - 1;
+    }
+    auto p = std::pow(1000, i);
+    return fmt::format("{:.2f} {}", sizeInBytes / p, sizeSuffixes[i]);
+}
 void Viewport::drawHUD() {
+    auto stats = _engine->GetRenderStats();
+
     ImGui::Begin("Scene Info");
     _framerate.record();
     ImGui::Text("%s", fmt::format("Display - {:.1f} fps", _framerate.report()).c_str());
+    ImGui::Separator();
+    for (const auto &stat : stats) {
+        ImGui::Text("%s: ", stat.first.c_str());
+        ImGui::SameLine();
+        auto textWidth = ImGui::CalcTextSize(stat.first.c_str()).x;
+        ImGui::SetCursorPosX(textWidth + 40);
+        ImGui::Text("%s", reportMetricSize((long double)stat.second.Get<ulong>()).c_str());
+    }
+
     ImGui::End();
 }
 
@@ -700,25 +723,28 @@ void Viewport::mouseMoveEvent(QMouseEvent *event) {
 }
 
 void Viewport::wheelEvent(QWheelEvent *event) {
-    switchToFreeCamera();
-    _model.viewSettings().freeCamera()->AdjustDistance(1.f - std::max(-0.5f, std::min(0.5f, (float(event->angleDelta().y()) / 1000.f))));
-
     ImGuiIO &io = ImGui::GetIO();
-    // Handle horizontal component
-    if (event->pixelDelta().x() != 0) {
-        io.MouseWheelH = event->pixelDelta().x() / (ImGui::GetTextLineHeight());
-    } else {
-        // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
-        io.MouseWheelH = event->angleDelta().x() / 120.0f;
-    }
 
-    // Handle vertical component
-    if (event->pixelDelta().y() != 0) {
-        // 5 lines per unit
-        io.MouseWheel = event->pixelDelta().y() / (5.0 * ImGui::GetTextLineHeight());
+    if (io.WantCaptureMouse) {
+        // Handle horizontal component
+        if (event->pixelDelta().x() != 0) {
+            io.MouseWheelH = event->pixelDelta().x() / (ImGui::GetTextLineHeight());
+        } else {
+            // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
+            io.MouseWheelH = event->angleDelta().x() / 120.0f;
+        }
+
+        // Handle vertical component
+        if (event->pixelDelta().y() != 0) {
+            // 5 lines per unit
+            io.MouseWheel = event->pixelDelta().y() / (5.0 * ImGui::GetTextLineHeight());
+        } else {
+            // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
+            io.MouseWheel = event->angleDelta().y() / 120.0f;
+        }
     } else {
-        // Magic number of 120 comes from Qt doc on QWheelEvent::pixelDelta()
-        io.MouseWheel = event->angleDelta().y() / 120.0f;
+        switchToFreeCamera();
+        _model.viewSettings().freeCamera()->AdjustDistance(1.f - std::max(-0.5f, std::min(0.5f, (float(event->angleDelta().y()) / 1000.f))));
     }
 }
 

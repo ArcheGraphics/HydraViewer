@@ -12,6 +12,7 @@ std::string to_constants(ClearColors value) {
         case ClearColors::DARK_GREY: return "Grey (Dark)";
         case ClearColors::LIGHT_GREY: return "Grey (Light)";
         case ClearColors::WHITE: return "White";
+        case ClearColors::Count: return "clearColorText";
     }
 }
 
@@ -27,6 +28,7 @@ std::string to_constants(HighlightColors value) {
         case HighlightColors::WHITE: return "White";
         case HighlightColors::YELLOW: return "Yellow";
         case HighlightColors::CYAN: return "Cyan";
+        case HighlightColors::Count: return "highlightColorName";
     }
 }
 
@@ -132,7 +134,7 @@ std::string to_constants(RenderModes value) {
         case RenderModes::GEOM_FLAT: return "Geom Flat";
         case RenderModes::GEOM_SMOOTH: return "Geom Smooth";
         case RenderModes::HIDDEN_SURFACE_WIREFRAME: return "Hidden Surface Wireframe";
-        case RenderModes::Count: break;
+        case RenderModes::Count: return "renderMode";
     }
     return "";
 }
@@ -152,6 +154,7 @@ std::string to_constants(ColorCorrectionModes value) {
         case ColorCorrectionModes::DISABLED: return "disabled";
         case ColorCorrectionModes::SRGB: return "sRGB";
         case ColorCorrectionModes::OPENCOLORIO: return "openColorIO";
+        case ColorCorrectionModes::Count: return "colorCorrectionModes";
     }
 }
 
@@ -161,6 +164,7 @@ std::string to_constants(PickModes value) {
         case PickModes::MODELS: return "Select Models";
         case PickModes::INSTANCES: return "Select Instances";
         case PickModes::PROTOTYPES: return "Select Prototypes";
+        case PickModes::Count: return "pickMode";
     }
 }
 
@@ -169,6 +173,7 @@ std::string to_constants(SelectionHighlightModes value) {
         case SelectionHighlightModes::NEVER: return "Never";
         case SelectionHighlightModes::ONLY_WHEN_PAUSED: return "Only when paused";
         case SelectionHighlightModes::ALWAYS: return "Always";
+        case SelectionHighlightModes::Count: return "selHighlightMode";
     }
 }
 
@@ -177,6 +182,7 @@ std::string to_constants(CameraMaskModes value) {
         case CameraMaskModes::NONE: return "none";
         case CameraMaskModes::PARTIAL: return "partial";
         case CameraMaskModes::FULL: return "full";
+        case CameraMaskModes::Count: return "cameraMaskModes";
     }
 }
 

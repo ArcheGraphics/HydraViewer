@@ -11,6 +11,8 @@
 #include <QCheckBox>
 #include <QSpinBox>
 #include <QComboBox>
+#include <QMetaClassInfo>
+#include <QLCDNumber>
 
 namespace vox {
 ViewSettingsWidget::ViewSettingsWidget(DataModel &model) : _model{model} {
@@ -41,53 +43,71 @@ QSize ViewSettingsWidget::sizeHint() const {
 }
 
 void ViewSettingsWidget::_link_view_model() {
-    {
-        auto row = 0;
-        auto label_widget = new QLabel("dome light enabled");
-        label_widget->setMaximumWidth(150);
-        label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
-        grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
+    int row = 0;
+    _create_combo_box<RenderModes>(row++, "renderMode");
+    _create_combo_box<ColorCorrectionModes>(row++, "colorCorrectionModes");
+    _create_combo_box<PickModes>(row++, "pickMode");
+    _create_combo_box<CameraMaskModes>(row++, "cameraMaskModes");
+    _create_combo_box<ClearColors>(row++, "clearColorText");
+    _create_combo_box<HighlightColors>(row++, "highlightColorName");
+    _create_combo_box<SelectionHighlightModes>(row++, "selHighlightMode");
 
-        auto value_widget = new QCheckBox();
-        value_widget->setChecked(_model.viewSettings().domeLightEnabled());
-        connect(value_widget, &QCheckBox::toggled, this, [&](bool v) {
-            _model.viewSettings().setDomeLightEnabled(v);
-        });
-        grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
-    }
-
-    {
-        auto row = 1;
-        auto label_widget = new QLabel("dome light texture visible");
-        label_widget->setMaximumWidth(150);
-        label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
-        grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
-
-        auto value_widget = new QCheckBox();
-        value_widget->setChecked(_model.viewSettings().domeLightTexturesVisible());
-        connect(value_widget, &QCheckBox::toggled, this, [&](bool v) {
-            _model.viewSettings().setDomeLightTexturesVisible(v);
-        });
-        grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
-    }
-
-    {
-        auto row = 2;
-        auto label_widget = new QLabel("render mode");
-        label_widget->setMaximumWidth(150);
-        label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
-        grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
-
-        auto value_widget = new QComboBox();
-        for (int i = 0; i < int(RenderModes::Count); ++i) {
-            value_widget->addItem(QString(to_constants(RenderModes(i)).c_str()));
+    auto meta = _model.viewSettings().metaObject();
+    for (int i = 0; i < meta->propertyCount(); ++i) {
+        auto p = meta->property(i);
+        if (p.typeId() == QMetaType::Bool) {
+            _create_check_box(row++, p.name());
         }
-        value_widget->setCurrentIndex(int(_model.viewSettings().renderMode()));
-        connect(value_widget, &QComboBox::activated, this, [&](int index) {
-            _model.viewSettings().setRenderMode(RenderModes{index});
-        });
-        grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
+        if (p.typeId() == QMetaType::Int) {
+            _create_spin_box(row++, p.name());
+        }
+        if (p.typeId() == QMetaType::Float || p.typeId() == QMetaType::Double) {
+            _create_double_spin_box(row++, p.name());
+        }
     }
+}
+
+void ViewSettingsWidget::_create_check_box(int row, const char *label) {
+    auto label_widget = new QLabel(label);
+    label_widget->setMaximumWidth(150);
+    label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
+    grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
+
+    auto value_widget = new QCheckBox();
+    value_widget->setChecked(_model.viewSettings().property(label).toBool());
+    connect(value_widget, &QCheckBox::toggled, this, [label, this](bool v) {
+        _model.viewSettings().setProperty(label, v);
+    });
+    grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
+}
+
+void ViewSettingsWidget::_create_spin_box(int row, const char *label) {
+    auto label_widget = new QLabel(label);
+    label_widget->setMaximumWidth(150);
+    label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
+    grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
+
+    auto value_widget = new QSpinBox();
+    value_widget->setValue(_model.viewSettings().property(label).toInt());
+    connect(value_widget, &QSpinBox::valueChanged, this, [label, this](int v) {
+        _model.viewSettings().setProperty(label, v);
+    });
+    grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
+}
+
+
+void ViewSettingsWidget::_create_double_spin_box(int row, const char *label) {
+    auto label_widget = new QLabel(label);
+    label_widget->setMaximumWidth(150);
+    label_widget->setTextInteractionFlags(Qt::TextInteractionFlag::TextBrowserInteraction);
+    grid_layout->addWidget(label_widget, row, 0, Qt::AlignLeft);
+
+    auto value_widget = new QDoubleSpinBox();
+    value_widget->setValue(_model.viewSettings().property(label).toDouble());
+    connect(value_widget, &QDoubleSpinBox::valueChanged, this, [label, this](double v) {
+        _model.viewSettings().setProperty(label, v);
+    });
+    grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
 }
 
 }// namespace vox
