@@ -6,9 +6,6 @@
     "name" : "fmt",
     "version>=" : "10.1.1"
   }, {
-    "name" : "gtest",
-    "version>=" : "1.14.0"
-  }, {
     "name" : "vcpkg-cmake-config",
     "version>=" : "2022-02-06#1"
   }, {

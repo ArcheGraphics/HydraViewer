@@ -22,10 +22,11 @@ if (APPLE)
 endif ()
 
 find_package(Qt6 COMPONENTS
-        Core Widgets
+        Core Widgets Test
         REQUIRED)
 find_package(fmt CONFIG REQUIRED)
 
 add_subdirectory(third_party)
 add_subdirectory(editor)
 add_subdirectory(app)
+add_subdirectory(tests)
