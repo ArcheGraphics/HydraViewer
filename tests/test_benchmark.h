@@ -6,11 +6,13 @@
 
 #pragma once
 
+#include <QtWidgets>
 #include <QTest>
 
-class TestQString : public QObject {
+class TestBenchmark : public QObject {
     Q_OBJECT
+
 private slots:
-    void toUpper_data();
-    void toUpper();
+    void multiple_data();
+    void multiple();
 };

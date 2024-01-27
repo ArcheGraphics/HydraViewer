@@ -12,6 +12,8 @@ qt_standard_project_setup()
 qt_add_executable(${PROJECT_NAME}
         main.cpp
         test_qstring.cpp
+        test_gui.cpp
+        test_benchmark.cpp
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
