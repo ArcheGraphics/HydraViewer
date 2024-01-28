@@ -125,9 +125,12 @@ void StageTreeWidget::toggleHierarchyVisibility(QTreeWidgetItem *item, std::opti
             visibility_to = item_vis_button->toggleVisibility();
         }
 
+        auto primItem = static_cast<PrimItemWidget *>(item);
+        pxr::UsdGeomImageable(primItem->_prim).GetVisibilityAttr().Set(visibility_to ? pxr::UsdGeomTokens->inherited : pxr::UsdGeomTokens->invisible);
+
         for (int i = 0; i < item->childCount(); ++i) {
             auto child_item = item->child(i);
-            toggleHierarchyVisibility(child_item, set_visibility_to);
+            toggleHierarchyVisibility(child_item, visibility_to);
         }
     }
 }
