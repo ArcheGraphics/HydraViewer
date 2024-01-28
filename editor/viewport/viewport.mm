@@ -213,21 +213,23 @@ std::string reportMetricSize(long double sizeInBytes) {
     return fmt::format("{:.2f} {}", sizeInBytes / p, sizeSuffixes[i]);
 }
 void Viewport::drawHUD() {
-    auto stats = _engine->GetRenderStats();
+    if (_model.viewSettings().showHUD()) {
+        auto stats = _engine->GetRenderStats();
 
-    ImGui::Begin("Scene Info");
-    _framerate.record();
-    ImGui::Text("%s", fmt::format("Display - {:.1f} fps", _framerate.report()).c_str());
-    ImGui::Separator();
-    for (const auto &stat : stats) {
-        ImGui::Text("%s: ", stat.first.c_str());
-        ImGui::SameLine();
-        auto textWidth = ImGui::CalcTextSize(stat.first.c_str()).x;
-        ImGui::SetCursorPosX(textWidth + 40);
-        ImGui::Text("%s", reportMetricSize((long double)stat.second.Get<ulong>()).c_str());
+        ImGui::Begin("Scene Info");
+        _framerate.record();
+        ImGui::Text("%s", fmt::format("Display - {:.1f} fps", _framerate.report()).c_str());
+        ImGui::Separator();
+        for (const auto &stat : stats) {
+            ImGui::Text("%s: ", stat.first.c_str());
+            ImGui::SameLine();
+            auto textWidth = ImGui::CalcTextSize(stat.first.c_str()).x;
+            ImGui::SetCursorPosX(textWidth + 40);
+            ImGui::Text("%s", reportMetricSize((long double)stat.second.Get<ulong>()).c_str());
+        }
+
+        ImGui::End();
     }
-
-    ImGui::End();
 }
 
 /// Draws the scene using Hydra.
@@ -235,10 +237,9 @@ pxr::HgiTextureHandle Viewport::drawWithHydra() {
     // Camera projection setup.
     auto [gfCamera, cameraAspect] = resolveCamera();
     auto frustum = gfCamera.GetFrustum();
-    auto cameraViewport = computeCameraViewport(cameraAspect);
     auto viewport = computeWindowViewport();
-    if (_cropImageToCameraViewport()) {
-        viewport = cameraViewport;
+    if (hasLockedAspectRatio()) {
+        viewport = computeCameraViewport(cameraAspect);
     }
 
     auto renderBufferSize = computeWindowSize();
@@ -366,13 +367,9 @@ std::pair<pxr::GfCamera, float> Viewport::resolveCamera() {
     auto cameraAspectRatio = gfCam.GetAspectRatio();
 
     // Conform the camera's frustum to the window viewport, if necessary.
-    if (!_cropImageToCameraViewport()) {
+    if (!hasLockedAspectRatio()) {
         auto targetAspect = float(size().width()) / std::max(1.f, float(size().height()));
-        if (_fitCameraInViewport()) {
-            pxr::CameraUtilConformWindow(&gfCam, pxr::CameraUtilFit, targetAspect);
-        } else {
-            pxr::CameraUtilConformWindow(&gfCam, pxr::CameraUtilMatchVertically, targetAspect);
-        }
+        pxr::CameraUtilConformWindow(&gfCam, pxr::CameraUtilFit, targetAspect);
     }
     auto frustumChanged = ((!_lastComputedGfCamera) || _lastComputedGfCamera->GetFrustum() != gfCam.GetFrustum());
 
@@ -460,14 +457,6 @@ void Viewport::computeAndSetClosestDistance() {
 
 bool Viewport::autoClip() {
     return _model.viewSettings().autoComputeClippingPlanes();
-}
-
-bool Viewport::_fitCameraInViewport() {
-    return ((_model.viewSettings().showMask() || _model.viewSettings().showMask_Outline() || showReticles()) && hasLockedAspectRatio());
-}
-
-bool Viewport::_cropImageToCameraViewport() {
-    return ((_model.viewSettings().showMask() && _model.viewSettings().showMask_Opaque()) && hasLockedAspectRatio());
 }
 
 void Viewport::recomputeBBox() {
@@ -561,10 +550,6 @@ pxr::GfVec4i Viewport::computeWindowViewport() {
     return {0, 0, size[0], size[1]};
 }
 
-bool Viewport::showReticles() {
-    return ((_model.viewSettings().showReticles_Inside() || _model.viewSettings().showReticles_Outside()) && hasLockedAspectRatio());
-}
-
 std::optional<Viewport::PickResult> Viewport::pick(const pxr::GfFrustum &pickFrustum) {
     if (!_model.stage()) {
         // error has already been issued
@@ -613,16 +598,14 @@ pxr::CameraUtilConformWindowPolicy Viewport::computeWindowPolicy(float cameraAsp
     auto windowPolicy = pxr::CameraUtilMatchVertically;
 
     if (hasLockedAspectRatio()) {
-        if (_cropImageToCameraViewport()) {
+        if (hasLockedAspectRatio()) {
             auto targetAspect = float(size().width()) / std::max(1.f, float(size().height()));
 
             if (targetAspect < cameraAspectRatio) {
                 windowPolicy = pxr::CameraUtilMatchHorizontally;
             }
         } else {
-            if (_fitCameraInViewport()) {
-                windowPolicy = pxr::CameraUtilFit;
-            }
+            windowPolicy = pxr::CameraUtilFit;
         }
     }
 

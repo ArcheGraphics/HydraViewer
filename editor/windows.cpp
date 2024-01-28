@@ -51,6 +51,8 @@ Windows::Windows(int width, int height)
     _initUI();
     _initMenuBar();
     _loadStylesheet();
+    // default scene
+    model.setStage(pxr::UsdStage::Open(fmt::format("{}/{}", PROJECT_PATH, "assets/Kitchen_set/Kitchen_set.usd")));
 }
 
 void Windows::run() {

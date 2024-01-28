@@ -96,10 +96,6 @@ private:
 
     bool autoClip();
 
-    bool _fitCameraInViewport();
-
-    bool _cropImageToCameraViewport();
-
     void recomputeBBox();
 
     void resetCam(float frameFit = 1.1);
@@ -121,8 +117,6 @@ private:
     pxr::CameraUtilConformWindowPolicy computeWindowPolicy(float cameraAspectRatio);
 
     pxr::GfVec2i computeWindowSize();
-
-    bool showReticles();
 
     /// Set the USD Stage this widget will be displaying. To decommission
     /// (even temporarily) this widget, supply None as 'stage'.

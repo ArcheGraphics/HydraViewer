@@ -13,8 +13,6 @@ set(COMMON_FILES
         common.cpp
         framerate.h
         framerate.cpp
-        stage_view.h
-        stage_view.cpp
         windows.h
         windows.cpp
         panels/stage_tree.h
@@ -71,4 +69,4 @@ target_link_libraries(${PROJECT_NAME} PRIVATE
 )
 
 target_compile_definitions(
-        ${PROJECT_NAME} PRIVATE PROJECT_PATH="${CMAKE_CURRENT_SOURCE_DIR}/..")
+        ${PROJECT_NAME} PRIVATE PROJECT_PATH= "${CMAKE_CURRENT_SOURCE_DIR}/..")

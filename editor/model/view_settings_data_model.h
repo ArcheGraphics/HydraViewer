@@ -12,37 +12,39 @@
 #include <QObject>
 
 struct RefinementComplexities {
-    RefinementComplexities(std::string compId, std::string name, float value);
+    explicit RefinementComplexities(float value);
     static const RefinementComplexities LOW;
     static const RefinementComplexities MEDIUM;
     static const RefinementComplexities HIGH;
     static const RefinementComplexities VERY_HIGH;
 
-    inline float value() const {
+    [[nodiscard]] inline float value() const {
         return _value;
     }
 
 private:
-    std::string _id;
-    std::string _name;
     float _value;
 };
+
+inline bool operator==(const RefinementComplexities &lhs, const RefinementComplexities &rhs) { return lhs.value() == rhs.value(); }
+
+QString to_constants(RefinementComplexities value);
 
 /// Class to hold OCIO display, view, and colorSpace config settings as strings.
 class OCIOSettings {
 public:
-    explicit OCIOSettings(std::string display = "", std::string view = "", std::string colorSpace = "");
+    explicit OCIOSettings(pxr::TfToken display = {}, pxr::TfToken view = {}, pxr::TfToken colorSpace = {});
 
-    const std::string &display();
+    const pxr::TfToken &display();
 
-    const std::string &view();
+    const pxr::TfToken &view();
 
-    const std::string &colorSpace();
+    const pxr::TfToken &colorSpace();
 
 private:
-    std::string _display;
-    std::string _view;
-    std::string _colorSpace;
+    pxr::TfToken _display;
+    pxr::TfToken _view;
+    pxr::TfToken _colorSpace;
 };
 
 /// Data model containing settings related to the rendered view of a USD file.
@@ -72,14 +74,6 @@ public:
     static constexpr float DEFAULT_SPECULAR = 0.1;
 
     explicit ViewSettingsDataModel(RootDataModel &rootDataModel);
-
-    Q_PROPERTY(pxr::GfVec4f cameraMaskColor READ cameraMaskColor WRITE setCameraMaskColor)
-    pxr::GfVec4f cameraMaskColor();
-    void setCameraMaskColor(pxr::GfVec4f value);
-
-    Q_PROPERTY(pxr::GfVec4f cameraReticlesColor READ cameraReticlesColor WRITE setCameraReticlesColor)
-    pxr::GfVec4f cameraReticlesColor();
-    void setCameraReticlesColor(pxr::GfVec4f value);
 
     Q_PROPERTY(float defaultMaterialAmbient READ defaultMaterialAmbient WRITE setDefaultMaterialAmbient)
     [[nodiscard]] float defaultMaterialAmbient() const;
@@ -196,69 +190,9 @@ public:
     [[nodiscard]] bool cullBackfaces() const;
     void setCullBackfaces(bool value);
 
-    Q_PROPERTY(bool showInactivePrims READ showInactivePrims WRITE setShowInactivePrims)
-    [[nodiscard]] bool showInactivePrims() const;
-    void setShowInactivePrims(bool value);
-
-    Q_PROPERTY(bool showAllPrototypePrims READ showAllPrototypePrims WRITE setShowAllPrototypePrims)
-    [[nodiscard]] bool showAllPrototypePrims() const;
-    void setShowAllPrototypePrims(bool value);
-
-    Q_PROPERTY(bool showUndefinedPrims READ showUndefinedPrims WRITE setShowUndefinedPrims)
-    [[nodiscard]] bool showUndefinedPrims() const;
-    void setShowUndefinedPrims(bool value);
-
-    Q_PROPERTY(bool showAbstractPrims READ showAbstractPrims WRITE setShowAbstractPrims)
-    [[nodiscard]] bool showAbstractPrims() const;
-    void setShowAbstractPrims(bool value);
-
-    Q_PROPERTY(bool showPrimDisplayNames READ showPrimDisplayNames WRITE setShowPrimDisplayNames)
-    [[nodiscard]] bool showPrimDisplayNames() const;
-    void setShowPrimDisplayNames(bool value);
-
-    Q_PROPERTY(bool rolloverPrimInfo READ rolloverPrimInfo WRITE setRolloverPrimInfo)
-    [[nodiscard]] bool rolloverPrimInfo() const;
-    void setRolloverPrimInfo(bool value);
-
-    Q_PROPERTY(CameraMaskModes cameraMaskMode READ cameraMaskMode WRITE setCameraMaskMode)
-    CameraMaskModes cameraMaskMode();
-    void setCameraMaskMode(CameraMaskModes value);
-
-    bool showMask();
-
-    bool showMask_Opaque();
-
-    Q_PROPERTY(bool showMask_Outline READ showMask_Outline WRITE setShowMask_Outline)
-    [[nodiscard]] bool showMask_Outline() const;
-    void setShowMask_Outline(bool value);
-
-    Q_PROPERTY(bool showReticles_Inside READ showReticles_Inside WRITE setShowReticles_Inside)
-    [[nodiscard]] bool showReticles_Inside() const;
-    void setShowReticles_Inside(bool value);
-
-    Q_PROPERTY(bool showReticles_Outside READ showReticles_Outside WRITE setShowReticles_Outside)
-    [[nodiscard]] bool showReticles_Outside() const;
-    void setShowReticles_Outside(bool value);
-
     Q_PROPERTY(bool showHUD READ showHUD WRITE setShowHUD)
     [[nodiscard]] bool showHUD() const;
     void setShowHUD(bool value);
-
-    Q_PROPERTY(bool showHUD_Info READ showHUD_Info WRITE setShowHUD_Info)
-    [[nodiscard]] bool showHUD_Info() const;
-    void setShowHUD_Info(bool value);
-
-    Q_PROPERTY(bool showHUD_Complexity READ showHUD_Complexity WRITE setShowHUD_Complexity)
-    [[nodiscard]] bool showHUD_Complexity() const;
-    void setShowHUD_Complexity(bool value);
-
-    Q_PROPERTY(bool showHUD_Performance READ showHUD_Performance WRITE setShowHUD_Performance)
-    [[nodiscard]] bool showHUD_Performance() const;
-    void setShowHUD_Performance(bool value);
-
-    Q_PROPERTY(bool showHUD_GPUstats READ showHUD_GPUstats WRITE setShowHUD_GPUstats)
-    [[nodiscard]] bool showHUD_GPUstats() const;
-    void setShowHUD_GPUstats(bool value);
 
     Q_PROPERTY(bool ambientLightOnly READ ambientLightOnly WRITE setAmbientLightOnly)
     [[nodiscard]] bool ambientLightOnly() const;
@@ -288,10 +222,6 @@ public:
     SelectionHighlightModes selHighlightMode();
     void setSelHighlightMode(SelectionHighlightModes value);
 
-    Q_PROPERTY(bool redrawOnScrub READ redrawOnScrub WRITE setRedrawOnScrub)
-    [[nodiscard]] bool redrawOnScrub() const;
-    void setRedrawOnScrub(bool value);
-
     std::shared_ptr<FreeCamera> freeCamera();
     void setFreeCamera(std::shared_ptr<FreeCamera> value);
 
@@ -301,24 +231,13 @@ public:
     std::optional<pxr::UsdPrim> cameraPrim();
     void setCameraPrim(std::optional<pxr::UsdPrim> value);
 
-    Q_PROPERTY(int fontSize READ fontSize WRITE setFontSize)
-    [[nodiscard]] int fontSize() const;
-    void setFontSize(int value);
-
 private:
     RootDataModel &_rootDataModel;
-    pxr::GfVec4f _cameraMaskColor{};
-    pxr::GfVec4f _cameraReticlesColor{};
     float _defaultMaterialAmbient;
     float _defaultMaterialSpecular;
-    bool _redrawOnScrub;
     RenderModes _renderMode;
     float _freeCameraFOV;
     float _freeCameraAspect;
-    // For freeCameraOverrideNear/Far, Use -inf as a sentinel value to mean
-    // None. (We cannot use None directly because that would cause a type-
-    // checking error in Settings.)
-    float _clippingPlaneNoneValue;
     std::optional<float> _freeCameraOverrideNear;
     std::optional<float> _freeCameraOverrideFar;
 
@@ -351,32 +270,13 @@ private:
     bool _enableSceneMaterials;
     bool _enableSceneLights;
     bool _cullBackfaces;
-    bool _showInactivePrims;
 
-    bool showAllMasterPrims;
-    bool _showAllPrototypePrims;
-
-    bool _showUndefinedPrims;
-    bool _showAbstractPrims;
-    bool _showPrimDisplayNames;
-    bool _rolloverPrimInfo;
     bool _displayCameraOracles;
-    CameraMaskModes _cameraMaskMode;
-    bool _showMask_Outline;
-    bool _showReticles_Inside;
-    bool _showReticles_Outside;
     bool _showHUD;
-
-    bool _showHUD_Info;
-
-    bool _showHUD_Complexity;
-    bool _showHUD_Performance;
-    bool _showHUD_GPUstats;
 
     RefinementComplexities _complexity = RefinementComplexities::LOW;
     std::shared_ptr<FreeCamera> _freeCamera{};
     std::optional<pxr::SdfPath> _cameraPath{};
-    int _fontSize;
 
     /// Needed when updating any camera setting (including movements). Will not
     /// update the property viewer.

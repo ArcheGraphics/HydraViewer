@@ -7,49 +7,60 @@
 #include "view_settings_data_model.h"
 #include <pxr/usd/usdGeom/camera.h>
 
-RefinementComplexities::RefinementComplexities(std::string compId, std::string name, float value)
-    : _id{std::move(compId)}, _name(std::move(name)), _value{value} {
+RefinementComplexities::RefinementComplexities(float value)
+    : _value{value} {
 }
 
-const RefinementComplexities RefinementComplexities::LOW = RefinementComplexities("low", "Low", 1.0);
-const RefinementComplexities RefinementComplexities::MEDIUM = RefinementComplexities("medium", "Medium", 1.1);
-const RefinementComplexities RefinementComplexities::HIGH = RefinementComplexities("high", "High", 1.2);
-const RefinementComplexities RefinementComplexities::VERY_HIGH = RefinementComplexities("veryhigh", "Very High", 1.3);
+const RefinementComplexities RefinementComplexities::LOW = RefinementComplexities(1.0);
+const RefinementComplexities RefinementComplexities::MEDIUM = RefinementComplexities(1.1);
+const RefinementComplexities RefinementComplexities::HIGH = RefinementComplexities(1.2);
+const RefinementComplexities RefinementComplexities::VERY_HIGH = RefinementComplexities(1.3);
 
-OCIOSettings::OCIOSettings(std::string display, std::string view, std::string colorSpace)
+QString to_constants(RefinementComplexities value) {
+    if (value == RefinementComplexities::LOW) {
+        return "low";
+    } else if (value == RefinementComplexities::MEDIUM) {
+        return "medium";
+    } else if (value == RefinementComplexities::HIGH) {
+        return "high";
+    } else if (value == RefinementComplexities::VERY_HIGH) {
+        return "veryhigh";
+    } else {
+        throw std::exception();
+    }
+}
+
+OCIOSettings::OCIOSettings(pxr::TfToken display, pxr::TfToken view, pxr::TfToken colorSpace)
     : _display(std::move(display)), _view(std::move(view)), _colorSpace(std::move(colorSpace)) {}
 
-const std::string &OCIOSettings::display() {
+const pxr::TfToken &OCIOSettings::display() {
     return _display;
 }
 
-const std::string &OCIOSettings::view() {
+const pxr::TfToken &OCIOSettings::view() {
     return _view;
 }
 
-const std::string &OCIOSettings::colorSpace() {
+const pxr::TfToken &OCIOSettings::colorSpace() {
     return _colorSpace;
 }
 
 ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel)
     : _rootDataModel{rootDataModel} {
-    _cameraMaskColor = {0.1, 0.1, 0.1, 1.0};
-    _cameraReticlesColor = {0.0, 0.7, 1.0, 1.0};
     _defaultMaterialAmbient = DEFAULT_AMBIENT;
     _defaultMaterialSpecular = DEFAULT_SPECULAR;
-    _redrawOnScrub = true;
     _renderMode = RenderModes::SMOOTH_SHADED;
     _freeCameraFOV = 60.f;
     _freeCameraAspect = 1.f;
     // For freeCameraOverrideNear/Far, Use -inf as a sentinel value to mean
     // None. (We cannot use None directly because that would cause a type-
     // checking error in Settings.)
-    _clippingPlaneNoneValue = -std::numeric_limits<float>::infinity();
-    _freeCameraOverrideNear = _clippingPlaneNoneValue;
-    _freeCameraOverrideFar = _clippingPlaneNoneValue;
-    if (_freeCameraOverrideNear == _clippingPlaneNoneValue)
+    auto clippingPlaneNoneValue = -std::numeric_limits<float>::infinity();
+    _freeCameraOverrideNear = clippingPlaneNoneValue;
+    _freeCameraOverrideFar = clippingPlaneNoneValue;
+    if (_freeCameraOverrideNear == clippingPlaneNoneValue)
         _freeCameraOverrideNear = std::nullopt;
-    if (_freeCameraOverrideFar == _clippingPlaneNoneValue)
+    if (_freeCameraOverrideFar == clippingPlaneNoneValue)
         _freeCameraOverrideFar = std::nullopt;
     _lockFreeCameraAspect = false;
     _colorCorrectionMode = ColorCorrectionModes::SRGB;
@@ -80,47 +91,9 @@ ViewSettingsDataModel::ViewSettingsDataModel(RootDataModel &rootDataModel)
     _enableSceneMaterials = true;
     _enableSceneLights = true;
     _cullBackfaces = false;
-    _showInactivePrims = true;
 
-    showAllMasterPrims = false;
-    _showAllPrototypePrims = false;
-
-    _showUndefinedPrims = false;
-    _showAbstractPrims = false;
-    _showPrimDisplayNames = true;
-    _rolloverPrimInfo = false;
     _displayCameraOracles = false;
-    _cameraMaskMode = CameraMaskModes::NONE;
-    _showMask_Outline = false;
-    _showReticles_Inside = false;
-    _showReticles_Outside = false;
     _showHUD = true;
-
-    _showHUD_Info = false;
-
-    _showHUD_Complexity = true;
-    _showHUD_Performance = true;
-    _showHUD_GPUstats = false;
-
-    _fontSize = 10;
-}
-
-pxr::GfVec4f ViewSettingsDataModel::cameraMaskColor() {
-    return _cameraMaskColor;
-}
-
-void ViewSettingsDataModel::setCameraMaskColor(pxr::GfVec4f value) {
-    _cameraMaskColor = value;
-    _visibleViewSetting();
-}
-
-pxr::GfVec4f ViewSettingsDataModel::cameraReticlesColor() {
-    return _cameraReticlesColor;
-}
-
-void ViewSettingsDataModel::setCameraReticlesColor(pxr::GfVec4f value) {
-    _cameraReticlesColor = value;
-    _visibleViewSetting();
 }
 
 float ViewSettingsDataModel::defaultMaterialAmbient() const { return _defaultMaterialAmbient; }
@@ -221,12 +194,6 @@ bool ViewSettingsDataModel::lockFreeCameraAspect() const { return _lockFreeCamer
 
 void ViewSettingsDataModel::setLockFreeCameraAspect(bool value) {
     _lockFreeCameraAspect = value;
-
-    if (value && !showMask()) {
-        // Make sure the camera mask is turned on so the locked aspect ratio
-        // is visible in the viewport.
-        setCameraMaskMode(CameraMaskModes::FULL);
-    }
     _visibleViewSetting();
 }
 
@@ -374,152 +341,12 @@ void ViewSettingsDataModel::setCullBackfaces(bool value) {
     _visibleViewSetting();
 }
 
-bool ViewSettingsDataModel::showInactivePrims() const {
-    return _showInactivePrims;
-}
-
-void ViewSettingsDataModel::setShowInactivePrims(bool value) {
-    _showInactivePrims = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showAllPrototypePrims() const {
-    return _showAllPrototypePrims;
-}
-
-void ViewSettingsDataModel::setShowAllPrototypePrims(bool value) {
-    _showAllPrototypePrims = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showUndefinedPrims() const {
-    return _showUndefinedPrims;
-}
-
-void ViewSettingsDataModel::setShowUndefinedPrims(bool value) {
-    _showUndefinedPrims = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showAbstractPrims() const {
-    return _showAbstractPrims;
-}
-
-void ViewSettingsDataModel::setShowAbstractPrims(bool value) {
-    _showAbstractPrims = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showPrimDisplayNames() const {
-    return _showPrimDisplayNames;
-}
-
-void ViewSettingsDataModel::setShowPrimDisplayNames(bool value) {
-    _showPrimDisplayNames = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::rolloverPrimInfo() const {
-    return _rolloverPrimInfo;
-}
-
-void ViewSettingsDataModel::setRolloverPrimInfo(bool value) {
-    _rolloverPrimInfo = value;
-    _visibleViewSetting();
-}
-
-CameraMaskModes ViewSettingsDataModel::cameraMaskMode() {
-    return _cameraMaskMode;
-}
-
-void ViewSettingsDataModel::setCameraMaskMode(CameraMaskModes value) {
-    _cameraMaskMode = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showMask() {
-    if (_cameraMaskMode == CameraMaskModes::FULL || _cameraMaskMode == CameraMaskModes::PARTIAL) {
-        return true;
-    }
-    return false;
-}
-
-bool ViewSettingsDataModel::showMask_Opaque() {
-    if (_cameraMaskMode == CameraMaskModes::FULL) {
-        return true;
-    }
-    return false;
-}
-
-bool ViewSettingsDataModel::showMask_Outline() const {
-    return _showMask_Outline;
-}
-
-void ViewSettingsDataModel::setShowMask_Outline(bool value) {
-    _showMask_Outline = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showReticles_Inside() const {
-    return _showReticles_Inside;
-}
-
-void ViewSettingsDataModel::setShowReticles_Inside(bool value) {
-    _showReticles_Inside = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showReticles_Outside() const {
-    return _showReticles_Outside;
-}
-
-void ViewSettingsDataModel::setShowReticles_Outside(bool value) {
-    _showReticles_Outside = value;
-    _visibleViewSetting();
-}
-
 bool ViewSettingsDataModel::showHUD() const {
     return _showHUD;
 }
 
 void ViewSettingsDataModel::setShowHUD(bool value) {
     _showHUD = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showHUD_Info() const {
-    return _showHUD_Info;
-}
-
-void ViewSettingsDataModel::setShowHUD_Info(bool value) {
-    _showHUD_Info = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showHUD_Complexity() const {
-    return _showHUD_Complexity;
-}
-
-void ViewSettingsDataModel::setShowHUD_Complexity(bool value) {
-    _showHUD_Complexity = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showHUD_Performance() const {
-    return _showHUD_Performance;
-}
-
-void ViewSettingsDataModel::setShowHUD_Performance(bool value) {
-    _showHUD_Performance = value;
-    _visibleViewSetting();
-}
-
-bool ViewSettingsDataModel::showHUD_GPUstats() const {
-    return _showHUD_GPUstats;
-}
-
-void ViewSettingsDataModel::setShowHUD_GPUstats(bool value) {
-    _showHUD_GPUstats = value;
     _visibleViewSetting();
 }
 
@@ -585,15 +412,6 @@ void ViewSettingsDataModel::setSelHighlightMode(SelectionHighlightModes value) {
     _visibleViewSetting();
 }
 
-bool ViewSettingsDataModel::redrawOnScrub() const {
-    return _redrawOnScrub;
-}
-
-void ViewSettingsDataModel::setRedrawOnScrub(bool value) {
-    _redrawOnScrub = value;
-    _visibleViewSetting();
-}
-
 std::shared_ptr<FreeCamera> ViewSettingsDataModel::freeCamera() {
     return _freeCamera;
 }
@@ -642,15 +460,6 @@ void ViewSettingsDataModel::setCameraPrim(std::optional<pxr::UsdPrim> value) {
     setCameraPath(std::nullopt);
 }
 
-int ViewSettingsDataModel::fontSize() const {
-    return _fontSize;
-}
-
-void ViewSettingsDataModel::setFontSize(int value) {
-    _fontSize = value;
-    _visibleViewSetting();
-}
-
 void ViewSettingsDataModel::_frustumSettingsChanged() {
     _updateFreeCameraData();
     emit signalSettingChanged();
@@ -690,6 +499,7 @@ pxr::GfVec4f ViewSettingsDataModel::_to_colors(ClearColors value) {
         case ClearColors::DARK_GREY: return {0.07074, 0.07074, 0.07074, 1.0};
         case ClearColors::LIGHT_GREY: return {0.45626, 0.45626, 0.45626, 1.0};
         case ClearColors::WHITE: return {1.0, 1.0, 1.0, 1.0};
+        case ClearColors::Count: return {};
     }
 }
 
@@ -698,5 +508,6 @@ pxr::GfVec4f ViewSettingsDataModel::_to_colors(HighlightColors value) {
         case HighlightColors::WHITE: return {1.0, 1.0, 1.0, 0.5};
         case HighlightColors::YELLOW: return {1.0, 1.0, 0.0, 0.5};
         case HighlightColors::CYAN: return {0.0, 1.0, 1.0, 0.5};
+        case HighlightColors::Count: return {};
     }
 }

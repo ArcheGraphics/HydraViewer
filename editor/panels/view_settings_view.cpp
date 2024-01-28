@@ -95,7 +95,6 @@ void ViewSettingsWidget::_create_spin_box(int row, const char *label) {
     grid_layout->addWidget(value_widget, row, 1, Qt::AlignLeft);
 }
 
-
 void ViewSettingsWidget::_create_double_spin_box(int row, const char *label) {
     auto label_widget = new QLabel(label);
     label_widget->setMaximumWidth(150);

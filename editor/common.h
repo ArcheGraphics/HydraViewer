@@ -116,7 +116,7 @@ enum class PropertyViewDataRoles {
 };
 std::string to_constants(PropertyViewDataRoles value);
 
-enum class RenderModes: int {
+enum class RenderModes : int {
     WIREFRAME,
     WIREFRAME_ON_SURFACE,
     SMOOTH_SHADED,
