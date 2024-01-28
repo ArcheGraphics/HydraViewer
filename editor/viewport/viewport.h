@@ -72,6 +72,10 @@ private:
 
     void wheelEvent(QWheelEvent *event) override;
 
+    void dragEnterEvent(QDragEnterEvent *event) override;
+
+    void dropEvent(QDropEvent *event) override;
+
     /// Returns a tuple of the camera to use for rendering (either a scene
     /// camera or a free camera) and that camera's original aspect ratio.
     /// Depending on camera guide settings, the camera frustum may be conformed

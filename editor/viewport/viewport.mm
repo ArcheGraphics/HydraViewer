@@ -15,11 +15,13 @@
 #include <pxr/usd/usd/primRange.h>
 #include <pxr/usd/usdGeom/camera.h>
 #include <pxr/usd/usdGeom/metrics.h>
+#include <pxr/usd/sdf/fileFormat.h>
 #include <pxr/imaging/hgi/blitCmdsOps.h>
 #include <pxr/imaging/hgiMetal/hgi.h>
 #include <pxr/imaging/hgiMetal/texture.h>
 #include <imgui.h>
 #include <QResizeEvent>
+#include <QMimeData>
 #include <fmt/format.h>
 
 using namespace pxr;
@@ -93,6 +95,7 @@ pxr::GfVec4i viewportMakeCenteredIntegral(pxr::GfVec4d viewport) {
 //----------------------------------------------------------------------------------------------------------------------
 Viewport::Viewport(QWidget *parent, DataModel &model)
     : QWidget{parent}, _model{model} {
+    setAcceptDrops(true);
     setAttribute(Qt::WA_NativeWindow);
     setAttribute(Qt::WA_PaintOnScreen);
     setAttribute(Qt::WA_OpaquePaintEvent);
@@ -113,13 +116,7 @@ Viewport::Viewport(QWidget *parent, DataModel &model)
 /// Initializes the Storm engine.
 void Viewport::initializeEngine() {
     _inFlightSemaphore = dispatch_semaphore_create(MaxBuffersInFlight);
-
     _hgi = Hgi::CreatePlatformDefaultHgi();
-    HdDriver driver{HgiTokens->renderDriver, VtValue(_hgi.get())};
-
-    _engine = std::make_unique<pxr::UsdImagingGLEngine>(driver);
-    _engine->SetEnablePresentation(false);
-    _engine->SetRendererAov(HdAovTokens->color);
 }
 
 void Viewport::resizeEvent(QResizeEvent *event) {
@@ -325,10 +322,8 @@ pxr::HgiTextureHandle Viewport::drawWithHydra() {
     auto pseudoRoot = _model.stage()->GetPseudoRoot();
 
     _engine->SetSelectionColor(_model.viewSettings().highlightColor());
-    _engine->SetRendererSetting(
-        pxr::TfToken("domeLightCameraVisibility"),
-        pxr::VtValue(_model.viewSettings().domeLightTexturesVisible()));
-
+    _engine->SetRendererSetting(HdRenderSettingsTokens->domeLightCameraVisibility,
+                                pxr::VtValue(_model.viewSettings().domeLightTexturesVisible()));
     _processBBoxes();
 
     // Render the frame.
@@ -760,6 +755,11 @@ void Viewport::_stageReplaced() {
         auto camera = _createNewFreeCamera(_model.viewSettings(), _stageIsZup);
         _model.viewSettings().setFreeCamera(camera);
         updateView(true, true);
+
+        HdDriver driver{HgiTokens->renderDriver, VtValue(_hgi.get())};
+        _engine = std::make_unique<pxr::UsdImagingGLEngine>(driver);
+        _engine->SetEnablePresentation(false);
+        _engine->SetRendererAov(HdAovTokens->color);
     }
 }
 
@@ -794,6 +794,33 @@ void Viewport::_processBBoxes() {
     } else {
         // No bboxes should be drawn
         _renderParams.bboxes = {};
+    }
+}
+
+std::string extension(const std::string &uri) {
+    auto dot_pos = uri.find_last_of('.');
+    if (dot_pos == std::string::npos) {
+        throw std::runtime_error{"Uri has no extension"};
+    }
+
+    return uri.substr(dot_pos + 1);
+}
+
+void Viewport::dragEnterEvent(QDragEnterEvent *event) {
+    if (event->mimeData()->hasFormat("text/uri-list")) {
+        event->acceptProposedAction();
+    }
+}
+
+void Viewport::dropEvent(QDropEvent *event) {
+    auto mimeData = event->mimeData();
+    auto extensions = pxr::SdfFileFormat::FindAllFileFormatExtensions();
+    for (const auto &url : mimeData->urls()) {
+        auto uri = url.path().toStdString();
+        auto ext = extension(uri);
+        if (extensions.find(ext) != extensions.end()) {
+            _model.setStage(pxr::UsdStage::Open(uri));
+        }
     }
 }
 
