@@ -24,6 +24,7 @@
 #include <regex>
 #include <QMessageBox>
 #include <QDesktopServices>
+#include <QFileDialog>
 
 namespace vox {
 namespace {
@@ -50,8 +51,6 @@ Windows::Windows(int width, int height)
     _initUI();
     _initMenuBar();
     _loadStylesheet();
-
-    model.setStage(pxr::UsdStage::Open(fmt::format("{}/{}", PROJECT_PATH, "assets/Kitchen_set/Kitchen_set.usd")));
 }
 
 void Windows::run() {
@@ -112,8 +111,14 @@ void Windows::_initUI() {
 }
 
 void Windows::_initMenuBar() {
+    auto file_menu = menuBar()->addMenu("&File");
     auto help_menu = menuBar()->addMenu("&Help");
 
+    {
+        auto load_geo = new QAction("Load Geometry...", this);
+        connect(load_geo, &QAction::triggered, this, &Windows::loadGeometryTriggered);
+        file_menu->addAction(load_geo);
+    }
     {
         auto homepage_action = new QAction("HydraViewer Homepage...", this);
         connect(homepage_action, &QAction::triggered, this, []() {
@@ -177,6 +182,15 @@ QtNodes::GraphicsView *Windows::_create_node_graph() {
     });
     view->insertAction(view->actions().front(), createNodeAction);
     return view;
+}
+
+void Windows::loadGeometryTriggered() {
+    auto start_path = fmt::format("{}/{}", PROJECT_PATH, "assets");
+    auto path = QFileDialog::getOpenFileName(this, "Load geometry file",
+                                             QString(start_path.c_str()),
+                                             "Geometry files (*.usd *.usda *.usdc *.abc)");
+
+    model.setStage(pxr::UsdStage::Open(path.toStdString()));
 }
 
 }// namespace vox

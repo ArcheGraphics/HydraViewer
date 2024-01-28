@@ -33,5 +33,7 @@ private:
     QtNodes::GraphicsView *_create_node_graph();
     void _showAboutTriggered();
     float _version{0.01};
+
+    void loadGeometryTriggered();
 };
 }// namespace vox

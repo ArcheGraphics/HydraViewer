@@ -162,6 +162,11 @@ pxr::UsdTimeCode Viewport::updateTime() {
 /// Draw the scene, and blit the result to the view.
 /// Returns false if the engine wasn't initialized.
 void Viewport::draw() {
+    if (!_model.stage()) {
+        // error has already been issued
+        return;
+    }
+
     auto drawable = _swapchain->nextDrawable();
     if (drawable) {
         auto timeCode = updateTime();
